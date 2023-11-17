@@ -1,6 +1,6 @@
-import csv
-from PyQt6.QtGui import QIcon, QAction, QActionGroup
-from PyQt6.QtCore import Qt, QSize
+import csv, datetime, functools
+from PyQt6.QtGui import QIcon, QAction, QActionGroup,  QColor, qRgb
+from PyQt6.QtCore import Qt, QSize, QVariantAnimation, QAbstractAnimation
 from PyQt6.QtWidgets import (QCheckBox,
                              QHBoxLayout,
                              QToolButton,
@@ -43,15 +43,14 @@ class Add_Task:
                                        }}
                                        """)
             
-            checkbox_layout = QHBoxLayout()
+            self.checkbox_layout = QHBoxLayout()
             self.check_box = QCheckBox(self.text, self.parent)
-            self.check_box.setLayout(checkbox_layout)
-            checkbox_layout.addStretch()
-            checkbox_layout.addWidget(self.options)
-            
+            self.check_box.setLayout(self.checkbox_layout)
+            self.checkbox_layout.addStretch()
+            self.checkbox_layout.addWidget(self.options)
             self.mainwindowlayout.insertWidget(1,self.check_box, alignment=Qt.AlignmentFlag.AlignTop)
             self.change_style_sheet()
-            self.check_box.stateChanged.connect(lambda value: self.parent.on_state_changed(value, self.color))
+            self.check_box.stateChanged.connect(lambda value: self.on_state_changed(value, self.color))
             widget_data = {
                 'Name' : self.text,
                 'Current_status' : False,
@@ -67,28 +66,29 @@ class Add_Task:
         menu = QMenu(parent=self.parent)
 
         priority_menu = QMenu('Set Priority', parent=self.parent)
-
         action_group = QActionGroup(self.parent)
-
         m_high = QAction('High', parent=self.parent, checkable=True)
         m_mid = QAction('Mid', parent=self.parent, checkable=True)
         m_low = QAction('Low', parent=self.parent, checkable=True)
-
         action_group.addAction(m_high)
         action_group.addAction(m_mid)
         action_group.addAction(m_low)
-
         m_high.toggled.connect(lambda : self.change_prio('high'))
         m_mid.toggled.connect(lambda : self.change_prio('mid'))
         m_low.toggled.connect(lambda : self.change_prio('low'))
-
         priority_menu.addAction(m_high)
         priority_menu.addAction(m_mid)
         priority_menu.addAction(m_low)
-
         menu.addMenu(priority_menu)
 
+        delete = QAction('Delete', parent=self.parent)
+        delete.triggered.connect(lambda : self.delete_task(self.check_box))
+        menu.addAction(delete)
+
         return menu
+    
+    def delete_task(self, widget: QCheckBox):
+        widget.deleteLater()
 
     def change_style_sheet(self):
         self.check_box.setStyleSheet(f"""QCheckBox {{
@@ -116,3 +116,37 @@ class Add_Task:
             self.color = priority_low
         
         return self.color
+    
+
+    def on_state_changed(self, value, color):
+        state = Qt.CheckState(value)
+
+        if state == Qt.CheckState.Unchecked:
+            start_animation(self.check_box, task_done, color)
+        if state == Qt.CheckState.Checked:
+            start_animation(self.check_box, color, task_done)
+
+def start_animation(checkbox, qprimary, qaccent):
+    animation = QVariantAnimation(checkbox)
+    animation.setDuration(400)
+    animation.setStartValue(QColor(qRgb(qprimary[0], qprimary[1], qprimary[2])))
+    animation.setEndValue(QColor(qRgb(qaccent[0], qaccent[1], qaccent[2])))
+    animation.valueChanged.connect(functools.partial(change_color, checkbox))
+    animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
+
+def change_color(widget, color):
+    widget.setStyleSheet(f"""
+                            QCheckBox {{
+                            background-color: {color.name()};
+                            color: white;
+                            padding: 30px;
+                            border-radius: 5px;
+                            }}  
+                            QCheckBox::indicator {{
+                            background-color: {background};
+                            border-radius: 4px;
+                            }}
+                            QCheckBox::indicator:checked {{
+                            background-color: {support};
+                            }}
+                            """)
