@@ -7,64 +7,56 @@ from PyQt6.QtWidgets import (QCheckBox,
                              QMenu
                              )
 from settings import *
-
 class Add_Task:
     def __init__(self, parent, mainlayout, task_name, prio):
         self.parent = parent
         self.text = task_name
         self.priority_str = prio
         self.mainwindowlayout = mainlayout
-    
-    def change_prio(self, prio):
-        self.priority_str = prio
-        self.color = self.get_color(prio)
-        if self.check_box.isChecked() == False:
-            self.change_style_sheet()
 
-    def save(self):
+    def add(self):
         self.text = self.text.strip()
         if self.text.strip():
-            self.color = priority_none
-            self.color = self.get_color(self.priority_str)
-           
-            self.options = QToolButton()
-            self.options.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
-            self.options.setText('...')
-            self.options.setIcon(QIcon('./data/icons/menu.png'))
-            self.options.setIconSize(QSize(30, 30))
-            self.options.setMenu(self.create_menu())
-            self.options.setStyleSheet(f"""
-                                       QToolButton {{
-                                       background-color : transparent;
-                                       }}
-
-                                       QToolButton::menu-indicator {{
-                                       image: none;
-                                       }}
-                                       """)
-            
-            self.checkbox_layout = QHBoxLayout()
-            self.check_box = QCheckBox(self.text, self.parent)
-            self.check_box.setLayout(self.checkbox_layout)
-            self.checkbox_layout.addStretch()
-            self.checkbox_layout.addWidget(self.options)
-            self.mainwindowlayout.insertWidget(1,self.check_box, alignment=Qt.AlignmentFlag.AlignTop)
-            self.change_style_sheet()
-            self.check_box.stateChanged.connect(lambda value: self.on_state_changed(value, self.color))
-            widget_data = {
-                'Name' : self.text,
-                'Current_status' : False,
-                'Priority' : self.priority_str
-            }
-            file_path = './data/task_data/data.csv'
+            self.create_task_widgets()
         
-            with open(file_path, 'a', newline='')as data_csv:
-                writer = csv.writer(data_csv)
-                writer.writerow(widget_data.values())
+    def create_task_widgets(self):
+        self.color = priority_none
+        self.color = self.get_color(self.priority_str)
+        
+        self.create_task_options()
+        self.create_task_check_box()
+        self.set_style_sheets()
+
+    def create_task_check_box(self):
+        self.checkbox_layout = QHBoxLayout()
+        self.check_box = QCheckBox(self.text, self.parent)
+        self.check_box.setLayout(self.checkbox_layout)
+        
+        self.checkbox_layout.addStretch()
+        self.checkbox_layout.addWidget(self.options)
+        self.mainwindowlayout.insertWidget(1,self.check_box, alignment=Qt.AlignmentFlag.AlignTop)
+        self.change_style_sheet()
+        self.check_box.stateChanged.connect(lambda value: self.on_state_changed(value, self.color))
+    
+    def create_task_options(self):
+        self.options = QToolButton()
+        self.options.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self.options.setIcon(QIcon('./data/icons/menu.png'))
+        self.options.setIconSize(QSize(30, 30))
+        self.options.setMenu(self.create_menu())
 
     def create_menu(self):
         menu = QMenu(parent=self.parent)
 
+        self.create_sub_menu_priority(menu)
+
+        delete = QAction('Delete', parent=self.parent)
+        delete.triggered.connect(lambda : self.delete_task(self.check_box))
+        menu.addAction(delete)
+
+        return menu
+
+    def create_sub_menu_priority(self, menu):
         priority_menu = QMenu('Set Priority', parent=self.parent)
         action_group = QActionGroup(self.parent)
         m_high = QAction('High', parent=self.parent, checkable=True)
@@ -80,15 +72,26 @@ class Add_Task:
         priority_menu.addAction(m_mid)
         priority_menu.addAction(m_low)
         menu.addMenu(priority_menu)
-
-        delete = QAction('Delete', parent=self.parent)
-        delete.triggered.connect(lambda : self.delete_task(self.check_box))
-        menu.addAction(delete)
-
-        return menu
     
     def delete_task(self, widget: QCheckBox):
         widget.deleteLater()
+    
+    def change_prio(self, prio):
+        self.priority_str = prio
+        self.color = self.get_color(prio)
+        if self.check_box.isChecked() == False:
+            self.change_style_sheet()
+
+    def set_style_sheets(self):
+        self.options.setStyleSheet(f"""
+                                    QToolButton {{
+                                    background-color : transparent;
+                                    }}
+
+                                    QToolButton::menu-indicator {{
+                                    image: none;
+                                    }}
+                                    """)
 
     def change_style_sheet(self):
         self.check_box.setStyleSheet(f"""QCheckBox {{

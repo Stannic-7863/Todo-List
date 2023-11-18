@@ -1,8 +1,8 @@
 from settings import *
 from Add_Task import Add_Task
 import functools, csv
-from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QColor, qRgb
-from PyQt6.QtCore import Qt, QSize, QVariantAnimation, QAbstractAnimation
+from PyQt6.QtGui import QFont, QFontDatabase, QIcon
+from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtWidgets import (QApplication,
                              QMainWindow,
                              QWidget,
@@ -63,7 +63,7 @@ class Add_task_dialog(QDialog):
         self.setLayout(self.layout)
 
     def save(self):
-        prio = None
+        prio = 'none'
         if self.p_high.isChecked():
             prio = 'high'
         elif self.p_mid.isChecked():
@@ -74,7 +74,7 @@ class Add_task_dialog(QDialog):
         text = self.get_task_text.toPlainText()
 
         add_task = Add_Task(self.parent, self.mainwindowlayout ,text, prio)
-        add_task.save()
+        add_task.add()
 
         self.accept()
 
@@ -188,39 +188,7 @@ class MainWindow(QMainWindow):
 
         dialog.exec()
 
-    def on_state_changed(self, value, color):
-        state = Qt.CheckState(value)
-        checkbox = self.sender()
 
-        if state == Qt.CheckState.Unchecked:
-            start_animation(checkbox, task_done, color)
-        if state == Qt.CheckState.Checked:
-            start_animation(checkbox, color, task_done)
-
-def start_animation(checkbox, qprimary, qaccent):
-    animation = QVariantAnimation(checkbox)
-    animation.setDuration(400)
-    animation.setStartValue(QColor(qRgb(qprimary[0], qprimary[1], qprimary[2])))
-    animation.setEndValue(QColor(qRgb(qaccent[0], qaccent[1], qaccent[2])))
-    animation.valueChanged.connect(functools.partial(change_color, checkbox))
-    animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
-
-def change_color(widget, color):
-    widget.setStyleSheet(f"""
-                            QCheckBox {{
-                            background-color: {color.name()};
-                            color: white;
-                            padding: 30px;
-                            border-radius: 5px;
-                            }}  
-                            QCheckBox::indicator {{
-                            background-color: {background};
-                            border-radius: 4px;
-                            }}
-                            QCheckBox::indicator:checked {{
-                            background-color: {support};
-                            }}
-                            """)
 
 
 if __name__ == '__main__':
