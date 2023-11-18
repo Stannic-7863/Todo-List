@@ -1,52 +1,55 @@
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QMenu, QToolButton
+from PyQt5.QtWidgets import QRadioButton, QWidget, QVBoxLayout, QApplication, QSizePolicy
+from PyQt5.QtCore import QSize, Qt
 
-class MainWindow(QWidget):
-    def __init__(self):
-        super().__init__()
+class LineWrappedRadioButton(QRadioButton):
+    def __init__(self, text='', parent=None):
+        super(LineWrappedRadioButton, self).__init__(text, parent)
+        policy = self.sizePolicy()
+        policy.setHorizontalPolicy(QSizePolicy.Preferred)
+        self.setSizePolicy(policy)
+        self.updateGeometry()
 
-        # Create a vertical layout for the main window
-        layout = QVBoxLayout(self)
+    def wrap_lines(self, width):
+        words = self.text().split()
+        lines = []
+        current_line = ""
 
-        # Create a label
-        self.label = QLabel("Selected Item:")
+        for word in words:
+            if self.fontMetrics().width(current_line + " " + word) <= width:
+                current_line += " " + word if current_line else word
+            else:
+                lines.append(current_line.strip())
+                current_line = word
 
-        # Create a tool button with three-dot icon
-        menu_button = QToolButton(self)
-        menu_button.setText("Menu")
-        menu_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
-        menu_button.setMenu(self.create_menu())
+        lines.append(current_line.strip())
+        wrapped_text = "\n".join(lines).strip()
+        self.setText(wrapped_text)
 
-        # Add the label and tool button to the layout
-        layout.addWidget(self.label)
-        layout.addWidget(menu_button)
+    def resizeEvent(self, event):
+        control_element_width = self.sizeHint().width() - self.style().itemTextRect(
+            self.fontMetrics(), self.rect(), Qt.TextShowMnemonic, False, self.text()
+        ).width()
+        self.wrap_lines(event.size().width() - control_element_width)
+        super(LineWrappedRadioButton, self).resizeEvent(event)
 
-    def create_menu(self):
-        menu = QMenu(self)
+    def minimumSizeHint(self):
+        return QSize(super(QRadioButton, self).minimumSizeHint().width(), self.sizeHint().height())
 
-        # Add actions to the menu
-        action1 = menu.addAction("Action 1")
-        action1.triggered.connect(lambda: self.menu_action_triggered("Action 1"))
 
-        action2 = menu.addAction("Action 2")
-        action2.triggered.connect(lambda: self.menu_action_triggered("Action 2"))
+def main():
+    import sys
 
-        action3 = menu.addAction("Action 3")
-        action3.triggered.connect(lambda: self.menu_action_triggered("Action 3"))
+    app = QApplication(sys.argv)
+    window = QWidget()
+    layout = QVBoxLayout()
+    button = LineWrappedRadioButton(
+        "Lorem ipsum dolor sit amet, consectetur fghhhhhhhhhhhhh gfh fhf ggfh adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua."
+    )
+    layout.addWidget(button)
+    window.setLayout(layout)
+    window.show()
+    sys.exit(app.exec_())
 
-        return menu
 
-    def menu_action_triggered(self, action_text):
-        self.label.setText(f"Selected Action: {action_text}")
-
-if __name__ == "__main__":
-    app = QApplication([])
-
-    # Create an instance of the main window
-    main_window = MainWindow()
-
-    # Set up the main window properties
-    main_window.setWindowTitle("PyQt6 QToolButton with Menu Example")
-    main_window.show()
-
-    # Start the application event loop
-    app.exec()
+if __name__ == '__main__':
+    main()
