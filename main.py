@@ -1,8 +1,9 @@
+import typing
+from PyQt6 import QtCore, QtGui
 from settings import *
 from Add_Task import Add_Task
-import functools, csv
-from PyQt6.QtGui import QFont, QFontDatabase, QIcon
-from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QColor, qRgb
+from PyQt6.QtCore import Qt, QSize, QVariantAnimation, QAbstractAnimation
 from PyQt6.QtWidgets import (QApplication,
                              QMainWindow,
                              QWidget,
@@ -15,8 +16,10 @@ from PyQt6.QtWidgets import (QApplication,
                              QPlainTextEdit,
                              QLabel,
                              QRadioButton,
-                             QButtonGroup
+                             QButtonGroup,
+                             QScrollBar
                              )
+
 
 class Add_task_dialog(QDialog):
     def __init__(self, parent, mainwindowlayout):
@@ -78,7 +81,18 @@ class Add_task_dialog(QDialog):
 
         self.accept()
 
-         
+class Custom_Scroll_Bar(QScrollBar):
+    def __init__(self):
+        super().__init__()
+
+    def enterEvent(self, event):
+        start_animation(self, qprimary, priority_mid)
+
+    def leaveEvent(self, event):
+        start_animation(self, priority_mid, qprimary)
+        
+
+    
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -115,6 +129,8 @@ class MainWindow(QMainWindow):
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setWidgetResizable(True)
         scroll.setWidget(central_widget)
+        custom_scroll = Custom_Scroll_Bar()
+        scroll.setVerticalScrollBar(custom_scroll)
         
         self.setCentralWidget(scroll)
         
@@ -180,13 +196,53 @@ class MainWindow(QMainWindow):
                              background: {background};
                              }}
                             """)
-
         self.showMaximized()
 
     def on_addtask_clicked(self):
         dialog = Add_task_dialog(self, self.taskwidget_layout)
 
         dialog.exec()
+
+def start_animation(widget, color_from, color_to):
+    animation = QVariantAnimation(widget)
+    animation.setDuration(400)
+    animation.setStartValue(QColor(qRgb(color_from[0], color_from[1], color_from[2])))
+    animation.setEndValue(QColor(qRgb(color_to[0], color_to[1], color_to[2])))
+    animation.valueChanged.connect(lambda value: change(widget, value.name()))
+    animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
+
+
+def change(widget, color):
+    widget.setStyleSheet(f"""
+                        QScrollBar:vertical {{
+                        background: {background};
+                        width: 20px;
+                        border: 0px solid black;
+                        margin: 10px 10px 10px 0px
+                        }}
+
+                        QScrollBar::handle:vertical {{
+                        border: 0px solid black;
+                        border-radius : 5px;
+                        background-color : {color}; 
+                        }}
+
+                        QScrollBar::sub-line:vertical {{
+                        background: {background};
+                        }}
+                        
+                        QScrollBar::add-line:vertical {{
+                        background: {background}; 
+                        }}
+
+                        QScrollBar::sub-page:vertical {{
+                        background: {background};
+                        }}
+
+                        QScrollBar::add-page:vertical {{
+                        background: {background};
+                        }}
+                    """)
 
 
 
