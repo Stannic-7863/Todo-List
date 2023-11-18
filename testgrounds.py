@@ -1,55 +1,83 @@
-from PyQt5.QtWidgets import QRadioButton, QWidget, QVBoxLayout, QApplication, QSizePolicy
-from PyQt5.QtCore import QSize, Qt
+import typing
+from PyQt6 import QtCore, QtGui
+from PyQt6.QtWidgets import QCheckBox, QSizePolicy, QVBoxLayout, QApplication, QWidget, QMainWindow, QHBoxLayout, QLabel
+from PyQt6.QtCore import Qt, QRect
+from PyQt6.QtGui import QResizeEvent
 
-class LineWrappedRadioButton(QRadioButton):
-    def __init__(self, text='', parent=None):
-        super(LineWrappedRadioButton, self).__init__(text, parent)
-        policy = self.sizePolicy()
-        policy.setHorizontalPolicy(QSizePolicy.Preferred)
-        self.setSizePolicy(policy)
-        self.updateGeometry()
+support = 'rgb(255, 255, 255)'
+background = 'rgb(34, 40, 49)'
+primary = 'rgb(57, 62, 70)'
+secondary = 'rgb(0, 173, 181)'
+accent = '(237,76,76)'
 
-    def wrap_lines(self, width):
-        words = self.text().split()
-        lines = []
-        current_line = ""
+qsupport = (255, 255, 255)
+qbackground = (34, 40, 49)
+qprimary = (57, 62, 70)
+qsecondary = (0, 173, 181)
+qaccent = (237,76,76)
 
-        for word in words:
-            if self.fontMetrics().width(current_line + " " + word) <= width:
-                current_line += " " + word if current_line else word
-            else:
-                lines.append(current_line.strip())
-                current_line = word
+priority_low = (0, 173, 181)
+priority_mid = (255,167,0)
+priority_high = (237,76,76)
+priority_none = (57, 62, 70)
+task_done = (11, 219, 123)
 
-        lines.append(current_line.strip())
-        wrapped_text = "\n".join(lines).strip()
-        self.setText(wrapped_text)
+class Custom(QCheckBox):
+    def __init__(self, text):
+        super().__init__()
 
-    def resizeEvent(self, event):
-        control_element_width = self.sizeHint().width() - self.style().itemTextRect(
-            self.fontMetrics(), self.rect(), Qt.TextShowMnemonic, False, self.text()
-        ).width()
-        self.wrap_lines(event.size().width() - control_element_width)
-        super(LineWrappedRadioButton, self).resizeEvent(event)
+        layout = QHBoxLayout(self)
+        label = QLabel(text)
+        label.setWordWrap(True)
+        layout.addWidget(label)
 
-    def minimumSizeHint(self):
-        return QSize(super(QRadioButton, self).minimumSizeHint().width(), self.sizeHint().height())
+        self.mouse_inside = True
+
+        self.setMouseTracking(True)
+
+        self.setStyleSheet(f"""
+                                QCheckBox {{
+                                background-color: rgb{str(task_done)};
+                                color: white;
+                                padding: 30px;
+                                border-radius: 5px;
+                                }}  
+                                QCheckBox::indicator {{
+                                subcontrol-position:left;
+                                background-color: {background};
+                                border-radius: 4px;
+                                }}
+                                QCheckBox::indicator:checked {{
+                                background-color: {support};
+                                }}
+                                QLabel {{
+                                padding-left: 40px;
+                                }}
+                                """)
+    def enterEvent(self, event):
+        self.mouse_inside = True
+    def leaveEvent(self, event):
+        self.mouse_inside = True
+    def mousePressEvent(self, event):
+        if self.mouse_inside:
+            self.setChecked(not self.isChecked())
 
 
-def main():
-    import sys
+class Main(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle('Word Wrap')
 
-    app = QApplication(sys.argv)
-    window = QWidget()
-    layout = QVBoxLayout()
-    button = LineWrappedRadioButton(
-        "Lorem ipsum dolor sit amet, consectetur fghhhhhhhhhhhhh gfh fhf ggfh adipisici elit, sed eiusmod tempor incidunt ut labore et dolore magna aliqua."
-    )
-    layout.addWidget(button)
-    window.setLayout(layout)
-    window.show()
-    sys.exit(app.exec_())
+        check_box = Custom('hmmmm hhmmm hm hmmhm hhm hm hm m')
+        widget = QWidget()
+        layout = QHBoxLayout()
+        widget.setLayout(layout)
+        layout.addWidget(check_box)
+        self.setCentralWidget(widget)
+        self.show()
 
 
 if __name__ == '__main__':
-    main()
+    app = QApplication([])
+    main = Main()
+    app.exec()

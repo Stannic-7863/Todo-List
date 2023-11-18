@@ -4,9 +4,36 @@ from PyQt6.QtCore import Qt, QSize, QVariantAnimation, QAbstractAnimation
 from PyQt6.QtWidgets import (QCheckBox,
                              QHBoxLayout,
                              QToolButton,
-                             QMenu
+                             QMenu,
+                             QLabel
                              )
 from settings import *
+
+class custom_checkbox(QCheckBox):
+    def __init__(self, text, option_menu):
+        super().__init__()
+
+        layout = QHBoxLayout()
+
+        text_label = QLabel()
+        text_label.setText(text)
+        text_label.setWordWrap(True)
+        
+        layout.addWidget(text_label)
+        layout.addStretch()
+        layout.addWidget(option_menu)
+
+        self.setLayout(layout)
+
+        self.mouse_inside = False
+    def enterEvent(self, event):
+        self.mouse_inside = True
+    def leaveEvent(self, event):
+        self.mouse_inside = True
+    def mousePressEvent(self, event):
+        if self.mouse_inside:
+            self.setChecked(not self.isChecked())
+
 class Add_Task:
     def __init__(self, parent, mainlayout, task_name, prio):
         self.parent = parent
@@ -23,20 +50,14 @@ class Add_Task:
         self.color = priority_none
         self.color = self.get_color(self.priority_str)
         
-        self.create_task_options()
         self.create_task_check_box()
-        self.set_style_sheets()
 
     def create_task_check_box(self):
-        self.checkbox_layout = QHBoxLayout()
-        self.check_box = QCheckBox(self.text, self.parent)
-        self.check_box.setLayout(self.checkbox_layout)
-        
-        self.checkbox_layout.addStretch()
-        self.checkbox_layout.addWidget(self.options)
-        self.mainwindowlayout.insertWidget(1,self.check_box, alignment=Qt.AlignmentFlag.AlignTop)
-        self.change_style_sheet()
+        self.options = self.create_task_options()
+        self.check_box = custom_checkbox(self.text, self.options)
+        self.mainwindowlayout.insertWidget(1, self.check_box, alignment=Qt.AlignmentFlag.AlignTop)
         self.check_box.stateChanged.connect(lambda value: self.on_state_changed(value, self.color))
+        change_color(self.check_box, f"rgb{str(self.color)}")
     
     def create_task_options(self):
         self.options = QToolButton()
@@ -44,7 +65,17 @@ class Add_Task:
         self.options.setIcon(QIcon('./data/icons/menu.png'))
         self.options.setIconSize(QSize(30, 30))
         self.options.setMenu(self.create_menu())
+        self.options.setStyleSheet(f"""
+                                    QToolButton {{
+                                    background-color : transparent;
+                                    }}
 
+                                    QToolButton::menu-indicator {{
+                                    image: none;
+                                    }}
+                                    """)
+        return self.options
+    
     def create_menu(self):
         menu = QMenu(parent=self.parent)
 
@@ -77,37 +108,11 @@ class Add_Task:
         widget.deleteLater()
     
     def change_prio(self, prio):
+        current = self.color
         self.priority_str = prio
         self.color = self.get_color(prio)
         if self.check_box.isChecked() == False:
-            self.change_style_sheet()
-
-    def set_style_sheets(self):
-        self.options.setStyleSheet(f"""
-                                    QToolButton {{
-                                    background-color : transparent;
-                                    }}
-
-                                    QToolButton::menu-indicator {{
-                                    image: none;
-                                    }}
-                                    """)
-
-    def change_style_sheet(self):
-        self.check_box.setStyleSheet(f"""QCheckBox {{
-                                    background-color: rgb{str(self.color)};
-                                    color: white;
-                                    padding: 30px;
-                                    border-radius: 5px;
-                                    }}  
-                                    QCheckBox::indicator {{
-                                    background-color: {background};
-                                    border-radius: 4px;
-                                    }}
-                                    QCheckBox::indicator:checked {{
-                                    background-color: {support};
-                                    }}
-                                    """)
+            start_animation(self.check_box, current , self.color)
 
     def get_color(self, prio):
         self.color = priority_none
@@ -134,22 +139,27 @@ def start_animation(checkbox, qprimary, qaccent):
     animation.setDuration(400)
     animation.setStartValue(QColor(qRgb(qprimary[0], qprimary[1], qprimary[2])))
     animation.setEndValue(QColor(qRgb(qaccent[0], qaccent[1], qaccent[2])))
-    animation.valueChanged.connect(functools.partial(change_color, checkbox))
+    animation.valueChanged.connect(lambda value: change_color(checkbox, value.name()))
     animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
 
 def change_color(widget, color):
     widget.setStyleSheet(f"""
                             QCheckBox {{
-                            background-color: {color.name()};
+                            background-color: {color};
                             color: white;
                             padding: 30px;
                             border-radius: 5px;
+                            border : none
                             }}  
                             QCheckBox::indicator {{
-                            background-color: {background};
-                            border-radius: 4px;
+                            image: none;
                             }}
                             QCheckBox::indicator:checked {{
-                            background-color: {support};
+                            image: none;
+                            }}
+                            QLabel {{
+                            background-color : {color};
+                            padding: 20px;
+                            font-size: 20px
                             }}
                             """)
