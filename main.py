@@ -26,6 +26,8 @@ class Add_task_dialog(QDialog):
         super().__init__(parent)
         path = './data/fonts/bfont.TTF'
 
+        self.limit = 300
+
         fontinfo = QFontDatabase.applicationFontFamilies(QFontDatabase.addApplicationFont(path))
         fontfamily = fontinfo[0] if fontinfo else 'Areil'
         QApplication.setFont(QFont(fontfamily))
@@ -38,11 +40,18 @@ class Add_task_dialog(QDialog):
         buttons = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         label = QLabel("New task")
         self.buttonbox = QDialogButtonBox(buttons)
-        self.buttonbox.clicked.connect(self.save)
+        self.buttonbox.accepted.connect(self.save)
         self.buttonbox.rejected.connect(self.reject)
 
         self.get_task_text = QPlainTextEdit()
         self.get_task_text.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
+        self.get_task_text.textChanged.connect(self.word_limit)
+        self.current_word_count_labet = QLabel()
+        self.current_word_count_labet.setText(f'{len(self.get_task_text.toPlainText())}/{self.limit}')
+        self.current_word_count_labet.setStyleSheet(f"""QLabel {{
+                                                    color : {primary};
+                                                    font-weight: bold;
+        }}""")
 
         self.p_high = QRadioButton('Priority : High')
         self.p_mid = QRadioButton('Priority : Mid')
@@ -58,6 +67,7 @@ class Add_task_dialog(QDialog):
         self.layout = QVBoxLayout()
         self.layout.addWidget(label, alignment= Qt.AlignmentFlag.AlignTop)
         self.layout.addWidget(self.get_task_text, alignment= Qt.AlignmentFlag.AlignTop)
+        self.layout.addWidget(self.current_word_count_labet, alignment= Qt.AlignmentFlag.AlignRight)
         self.layout.addWidget(self.p_high)
         self.layout.addWidget(self.p_mid)
         self.layout.addWidget(self.p_low)
@@ -80,7 +90,33 @@ class Add_task_dialog(QDialog):
         add_task.add()
 
         self.accept()
+    
+    def word_limit(self):
+        self.get_task_text.textChanged.disconnect(self.word_limit)
+        current_text = self.get_task_text.toPlainText()
+        if len(current_text) > self.limit:
+            cursor = self.get_task_text.textCursor()
+            cursor.deletePreviousChar()
+            self.get_task_text.setTextCursor(cursor)
+            
+        display_text = len(current_text)
+        if display_text >= 300:
+            display_text = 300   
+            self.current_word_count_labet.setStyleSheet(f"""QLabel {{
+                                                    color : rgb{str(priority_mid)};
+                                                    font-weight: bold;
+                                                    }}""")
+        else : 
+            self.current_word_count_labet.setStyleSheet(f"""QLabel {{
+                                                    color : {primary};
+                                                    font-weight: bold;
+                                                    }}""")
 
+        self.current_word_count_labet.setText(f'{display_text}/{self.limit}')
+
+        self.get_task_text.textChanged.connect(self.word_limit)
+    
+ 
 class Custom_Scroll_Bar(QScrollBar):
     def __init__(self):
         super().__init__()
@@ -90,8 +126,6 @@ class Custom_Scroll_Bar(QScrollBar):
 
     def leaveEvent(self, event):
         start_animation(self, priority_mid, qprimary)
-        
-
     
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -171,7 +205,7 @@ class MainWindow(QMainWindow):
                              background: {background};
                              width: 20px;
                              border: 0px solid black;
-                             margin: 10px 10px 10px 0px
+                             margin: 15px 10px 15px 0px
                              }}
 
                              QScrollBar::handle:vertical {{
@@ -218,7 +252,7 @@ def change(widget, color):
                         background: {background};
                         width: 20px;
                         border: 0px solid black;
-                        margin: 10px 10px 10px 0px
+                        margin: 15px 10px 15px 0px
                         }}
 
                         QScrollBar::handle:vertical {{
