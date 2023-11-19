@@ -160,6 +160,6 @@ def change_color(widget, color):
                             QLabel {{
                             background-color : {color};
                             padding: 20px;
-                            font-size: 20px
+                            font-size: px
                             }}
                             """)
