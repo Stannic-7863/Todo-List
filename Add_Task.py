@@ -20,8 +20,7 @@ class custom_checkbox(QCheckBox):
         text_label.setWordWrap(True)
         
         layout.addWidget(text_label)
-        layout.addStretch()
-        layout.addWidget(option_menu)
+        layout.addWidget(option_menu, alignment= Qt.AlignmentFlag.AlignRight)
 
         self.setLayout(layout)
 
@@ -134,11 +133,11 @@ class Add_Task:
         if state == Qt.CheckState.Checked:
             start_animation(self.check_box, color, task_done)
 
-def start_animation(checkbox, qprimary, qaccent):
+def start_animation(checkbox, color_from, color_to):
     animation = QVariantAnimation(checkbox)
     animation.setDuration(400)
-    animation.setStartValue(QColor(qRgb(qprimary[0], qprimary[1], qprimary[2])))
-    animation.setEndValue(QColor(qRgb(qaccent[0], qaccent[1], qaccent[2])))
+    animation.setStartValue(QColor(qRgb(color_from[0], color_from[1], color_from[2])))
+    animation.setEndValue(QColor(qRgb(color_to[0], color_to[1], color_to[2])))
     animation.valueChanged.connect(lambda value: change_color(checkbox, value.name()))
     animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
 
