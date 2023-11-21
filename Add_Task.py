@@ -23,8 +23,10 @@ class custom_checkbox(QCheckBox):
         layout.addWidget(option_menu, alignment= Qt.AlignmentFlag.AlignRight)
 
         self.setLayout(layout)
-
         self.mouse_inside = False
+        self.get_width = self.width()
+        self.get_height = self.height()
+        self.increment = 10
     def enterEvent(self, event):
         self.mouse_inside = True
     def leaveEvent(self, event):
@@ -32,6 +34,7 @@ class custom_checkbox(QCheckBox):
     def mousePressEvent(self, event):
         if self.mouse_inside:
             self.setChecked(not self.isChecked())
+
 
 class Add_Task:
     def __init__(self, parent, mainlayout, task_name, prio):

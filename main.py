@@ -26,9 +26,11 @@ class MainWindow(QMainWindow):
         fontfamily = fontinfo[0] if fontinfo else 'Areil'
         self.setFont(QFont(fontfamily))
 
+        self.getting_task = False
+
         self.setWindowTitle('Todo List')
-        self.setMinimumHeight(600)
-        self.setMinimumWidth(400)
+        self.setMinimumHeight(800)
+        self.setMinimumWidth(700)
 
         self.central_layout = QHBoxLayout()
         central_widget = QWidget()
@@ -84,6 +86,7 @@ class MainWindow(QMainWindow):
                                    padding: 10px;
                                    border: 2px solid white;
                                    border-radius: 12px;
+                                   max-width: 1200;
                                    }}
                                    QPushButton:hover {{
                                    background-color: {primary}
@@ -121,17 +124,25 @@ class MainWindow(QMainWindow):
                             """)
         self.showMaximized()
     def on_addtask_clicked(self):
-        add_task_no_dailog_widget = Add_Task_No_dialog(self, self.taskwidget_layout)
-        self.taskwidget_layout.insertWidget(1 , add_task_no_dailog_widget)        
+        if not self.getting_task:
+            self.getting_task = True
+            layout = QHBoxLayout()    
+            self.placeholder_widget = QWidget()
+            self.placeholder_widget.setLayout(layout)
+            add_task_no_dailog_widget = Add_Task_No_dialog(self, self.taskwidget_layout)
+            layout.addWidget(add_task_no_dailog_widget)
+            self.taskwidget_layout.insertWidget(1 , self.placeholder_widget) 
 
+            self.placeholder_widget.setStyleSheet(f"""background : {accent}; max-width: 1200;""")
+          
     def addtask_dialog_show(self):
-        dialog = Add_task_dialog(self, self.taskwidget_layout)
+        if not self.getting_task:
+            self.getting_task = True
+            dialog = Add_task_dialog(self, self.taskwidget_layout)
+            dialog.exec()
 
-        dialog.exec()
-
-
-
-
+    def on_task_added(self):
+        self.getting_task = False
 
 if __name__ == '__main__':
     app = QApplication([])
