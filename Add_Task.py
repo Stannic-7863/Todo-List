@@ -1,7 +1,7 @@
 import csv, datetime, functools
-from PyQt6.QtGui import QIcon, QAction, QActionGroup,  QColor, qRgb, QFont, QFontDatabase
-from PyQt6.QtCore import Qt, QSize, QVariantAnimation, QAbstractAnimation
-from PyQt6.QtWidgets import (QCheckBox,
+from PySide6.QtGui import QIcon, QAction, QActionGroup,  QColor, qRgb, QFont, QFontDatabase
+from PySide6.QtCore import Qt, QSize, QVariantAnimation, QAbstractAnimation
+from PySide6.QtWidgets import (QCheckBox,
                              QHBoxLayout,
                              QToolButton,
                              QMenu,

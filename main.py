@@ -1,9 +1,9 @@
 import typing
 from settings import *
 from custom_widgets import *
-from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QShortcut, QKeySequence
-from PyQt6.QtCore import Qt, QSize
-from PyQt6.QtWidgets import (QApplication,
+from PySide6.QtGui import QFont, QFontDatabase, QIcon, QShortcut, QKeySequence
+from PySide6.QtCore import Qt, QSize
+from PySide6.QtWidgets import (QApplication,
                              QMainWindow,
                              QWidget,
                              QVBoxLayout,

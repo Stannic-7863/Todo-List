@@ -1,10 +1,10 @@
 import typing
-from PyQt6 import QtCore, QtGui
+from PySide6 import QtCore, QtGui
 from settings import *
 from Add_Task import Add_Task
-from PyQt6.QtGui import QFont, QFontDatabase, QColor, qRgb, QShortcut, QKeySequence
-from PyQt6.QtCore import Qt, QSize, QVariantAnimation, QAbstractAnimation
-from PyQt6.QtWidgets import (QApplication,
+from PySide6.QtGui import QFont, QFontDatabase, QColor, qRgb, QShortcut, QKeySequence
+from PySide6.QtCore import Qt, QSize, QVariantAnimation, QAbstractAnimation
+from PySide6.QtWidgets import (QApplication,
                              QWidget,
                              QVBoxLayout,
                              QHBoxLayout,
