@@ -1,61 +1,44 @@
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QScrollArea, QScrollBar, QStyle
-
-class CustomScrollBar(QScrollBar):
-    def __init__(self):
-        super().__init__()
-
-        self.setMinimumWidth(12)
-        self.setMaximumWidth(12)
-        self.setStyleSheet("""
-            QScrollBar:vertical {
-                background-color: #f0f0f0;
-                width: 12px;
-            }
-
-            QScrollBar::handle:vertical {
-                background-color: #888;
-                min-height: 20px;
-            }
-        """)
-
-    def enterEvent(self, event):
-   
-        print("Scrollbar handle hovered in")
-        super().enterEvent(event)
-
-    def leaveEvent(self, event):
-        
-        print("Scrollbar handle hovered out")
-        super().leaveEvent(event)
-
-    
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QGraphicsOpacityEffect
+from PyQt6.QtCore import Qt, QRect, QPropertyAnimation, QSequentialAnimationGroup
 
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
 
-        layout = QVBoxLayout(self)
+        self.layout = QVBoxLayout(self)
 
-        scroll_area = QScrollArea(self)
-        content_widget = QWidget(self)
-        content_layout = QVBoxLayout(content_widget)
+        self.addButton = QPushButton("Add Widget")
+        self.addButton.clicked.connect(self.addAnimatedWidget)
 
-        for i in range(20):
-            label = QLabel(f"Label {i + 1}")
-            content_layout.addWidget(label)
+        self.layout.addWidget(self.addButton)
 
-        scroll_area.setWidget(content_widget)
+    def addAnimatedWidget(self):
+        newWidget = QWidget(self)
+        newWidget.setStyleSheet("background-color: red;")
+        newWidget.setFixedSize(100, 100)
 
-        custom_scrollbar = CustomScrollBar()
-        scroll_area.setVerticalScrollBar(custom_scrollbar)
+        # Set up opacity effect
+        opacity_effect = QGraphicsOpacityEffect(self)
+        newWidget.setGraphicsEffect(opacity_effect)
 
-        layout.addWidget(scroll_area)
+        self.layout.addWidget(newWidget)
 
-        self.setGeometry(100, 100, 300, 200)
-        self.setWindowTitle('Custom Scrollbar Example')
+        # Set the initial position outside the view
+        newWidget.setGeometry(QRect(0, self.height(), newWidget.width(), newWidget.height()))
 
-if __name__ == '__main__':
+        # Add animation to slide into view and change opacity
+        opacity_animation = QPropertyAnimation(opacity_effect, b"opacity")
+        opacity_animation.setDuration(500)  # Set the duration of the opacity animation in milliseconds
+        opacity_animation.setStartValue(0.0)
+        opacity_animation.setEndValue(1.0)
+
+        
+        # Group animations in sequence
+        sequential_group = QSequentialAnimationGroup(self)
+        sequential_group.addAnimation(opacity_animation)
+        sequential_group.start(QSequentialAnimationGroup.DeletionPolicy.DeleteWhenStopped)
+
+if __name__ == "__main__":
     app = QApplication([])
     window = MainWindow()
     window.show()
