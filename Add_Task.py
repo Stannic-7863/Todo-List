@@ -1,14 +1,15 @@
 import csv, datetime, functools
-from PyQt6.QtGui import QIcon, QAction, QActionGroup,  QColor, qRgb
+from PyQt6.QtGui import QIcon, QAction, QActionGroup,  QColor, qRgb, QFont, QFontDatabase
 from PyQt6.QtCore import Qt, QSize, QVariantAnimation, QAbstractAnimation
 from PyQt6.QtWidgets import (QCheckBox,
                              QHBoxLayout,
                              QToolButton,
                              QMenu,
-                             QLabel
+                             QLabel,
+                             QApplication
                              )
 from settings import *
-from load_save_data import change_priority_db
+from load_save_data import change_priority_db, change_status_db
 import datetime
 
 class custom_checkbox(QCheckBox):
@@ -39,12 +40,19 @@ class custom_checkbox(QCheckBox):
 
 
 class Add_Task:
-    def __init__(self, parent, mainlayout, task_name, prio):
+    def __init__(self, parent, mainlayout, task_name, prio, status, task_id):
         self.parent = parent
         self.text = task_name
         self.priority_str = prio
         self.mainwindowlayout = mainlayout
-        
+        self.status = status
+        self.task_id = task_id
+
+        path = './data/fonts/bfont.TTF'
+
+        fontinfo = QFontDatabase.applicationFontFamilies(QFontDatabase.addApplicationFont(path))
+        fontfamily = fontinfo[0] if fontinfo else 'Areil'
+        QApplication.setFont(QFont(fontfamily))
 
     def add(self):
         self.text = self.text.strip()
@@ -63,6 +71,11 @@ class Add_Task:
         self.mainwindowlayout.insertWidget(1, self.check_box, alignment=Qt.AlignmentFlag.AlignTop)
         self.check_box.stateChanged.connect(lambda value: self.on_state_changed(value, self.color))
         change_color(self.check_box, f"rgb{str(self.color)}")
+
+        if self.status == 'done':
+            self.check_box.setChecked(True)
+        if self.status == 'not done':
+            self.check_box.setChecked(False)
     
     def create_task_options(self):
         self.options = QToolButton()
@@ -120,7 +133,7 @@ class Add_Task:
         if self.check_box.isChecked() == False:
             start_animation(self.check_box, current , self.color)
 
-        change_priority_db(self.text, previous_prio, self.priority_str)
+        change_priority_db(previous_prio, self.priority_str, self.task_id)
 
     def get_color(self, prio):
         self.color = priority_none
@@ -136,11 +149,16 @@ class Add_Task:
 
     def on_state_changed(self, value, color):
         state = Qt.CheckState(value)
+        current = self.status
 
         if state == Qt.CheckState.Unchecked:
             start_animation(self.check_box, task_done, color)
+            self.status = 'not done'
+            change_status_db(current, self.status, self.task_id)
         if state == Qt.CheckState.Checked:
             start_animation(self.check_box, color, task_done)
+            self.status = 'done'
+            change_status_db(current, self.status, self.task_id)
 
 def start_animation(checkbox, color_from, color_to):
     animation = QVariantAnimation(checkbox)
