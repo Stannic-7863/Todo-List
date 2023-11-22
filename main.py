@@ -11,21 +11,21 @@ from PyQt6.QtWidgets import (QApplication,
                              QScrollArea,
                              QPushButton
                              )
-
+from load_save_data import fetch_data
     
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.font_init()
         self.ui_init()
 
-    def ui_init(self):
-
+    def font_init(self):
         path = './data/fonts/bfont.TTF'
 
         fontinfo = QFontDatabase.applicationFontFamilies(QFontDatabase.addApplicationFont(path))
         fontfamily = fontinfo[0] if fontinfo else 'Areil'
         self.setFont(QFont(fontfamily))
-
+    def ui_init(self):
         self.getting_task = False
 
         self.setWindowTitle('Todo List')
@@ -61,12 +61,16 @@ class MainWindow(QMainWindow):
         self.addtask.setIconSize(QSize(50,50))
         self.addtask.setContentsMargins(0,0,0,0)
         self.addtask.clicked.connect(self.on_addtask_clicked)
-        addtask_shortcut = QShortcut(QKeySequence("Ctrl+I"), self)
-        addtask_shortcut.activated.connect(self.addtask_dialog_show)
        
         self.addtask.setFixedWidth(200)
         self.taskwidget_layout.addWidget(self.addtask, alignment=Qt.AlignmentFlag.AlignCenter)
         self.taskwidget_layout.addStretch()
+
+        data = fetch_data()
+        for items in data:
+            task_name, prio, status, category, task_id = items
+            add_task = Add_Task(self, self.taskwidget_layout, task_name, prio, status, task_id)
+            add_task.add()
 
 
         self.setStyleSheet(f"""
@@ -133,14 +137,8 @@ class MainWindow(QMainWindow):
             layout.addWidget(add_task_no_dailog_widget)
             self.taskwidget_layout.insertWidget(1 , self.placeholder_widget) 
 
-            self.placeholder_widget.setStyleSheet(f"""background : {accent}; max-width: 1200;""")
+            self.placeholder_widget.setStyleSheet(f"""background : {primary}; max-width: 1200;""")
           
-    def addtask_dialog_show(self):
-        if not self.getting_task:
-            self.getting_task = True
-            dialog = Add_task_dialog(self, self.taskwidget_layout)
-            dialog.exec()
-
     def on_task_added(self):
         self.getting_task = False
 
