@@ -127,6 +127,7 @@ def delete_task_db(_id):
     connection.commit()
 
 def fetch_data():
+    main()
     cursor.execute("""
     SELECT task_name, current_priority, current_status, category, task_id
     FROM main
@@ -138,7 +139,3 @@ def fetch_data():
     results = cursor.fetchall()
 
     return results
-
-
-if __name__ == '__main__':
-    main()
