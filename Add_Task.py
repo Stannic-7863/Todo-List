@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (QCheckBox,
                              QApplication
                              )
 from settings import *
-from load_save_data import change_priority_db, change_status_db, delete_task_db
+from db_data_functions import change_priority_db, change_status_db, delete_task_db
 import datetime
 
 class custom_checkbox(QCheckBox):

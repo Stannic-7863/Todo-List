@@ -19,7 +19,7 @@ from PyQt6.QtWidgets import (QApplication,
                              QSizePolicy
                              )
 import datetime
-from load_save_data import commit_new_task_data
+from db_data_functions import commit_new_task_data
 
 
 class Custom_Scroll_Bar(QScrollBar):

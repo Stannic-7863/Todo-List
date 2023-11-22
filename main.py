@@ -1,6 +1,6 @@
 import typing
 from settings import *
-from custom_widgets_for_main import *
+from custom_widgets import *
 from PyQt6.QtGui import QFont, QFontDatabase, QIcon, QShortcut, QKeySequence
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtWidgets import (QApplication,
@@ -11,7 +11,7 @@ from PyQt6.QtWidgets import (QApplication,
                              QScrollArea,
                              QPushButton
                              )
-from load_save_data import fetch_data
+from db_data_functions import fetch_data
     
 class MainWindow(QMainWindow):
     def __init__(self):
