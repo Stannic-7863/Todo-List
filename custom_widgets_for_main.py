@@ -22,107 +22,6 @@ import datetime
 from load_save_data import commit_new_task_data
 
 
-class Add_task_dialog(QDialog):
-    def __init__(self, parent, mainwindowlayout):
-        super().__init__(parent)
-        path = './data/fonts/bfont.TTF'
-
-        self.limit = 300
-        fontinfo = QFontDatabase.applicationFontFamilies(QFontDatabase.addApplicationFont(path))
-        fontfamily = fontinfo[0] if fontinfo else 'Areil'
-        QApplication.setFont(QFont(fontfamily))
-
-        self.parent = parent
-        self.mainwindowlayout = mainwindowlayout
-        self.setWindowTitle('Add a new task')
-        self.setGeometry(100, 100, 500, 400)
-
-        buttons = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        label = QLabel("New task")
-        self.buttonbox = QDialogButtonBox(buttons)
-        self.buttonbox.accepted.connect(self.save)
-        self.buttonbox.rejected.connect(self.reject)
-
-        self.get_task_text = QPlainTextEdit()
-        self.get_task_text.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
-        self.get_task_text.textChanged.connect(self.word_limit)
-        self.current_word_count_label = QLabel()
-        self.current_word_count_label.setText(f'{len(self.get_task_text.toPlainText())}/{self.limit}')
-        self.current_word_count_label.setStyleSheet(f"""QLabel {{
-                                                    color : {primary};
-                                                    font-weight: bold;
-        }}""")
-
-        self.p_high = QRadioButton('Priority : High')
-        self.p_mid = QRadioButton('Priority : Mid')
-        self.p_low = QRadioButton('Priority : Low')
-
-        
-        self.buttongroup = QButtonGroup()
-        self.buttongroup.addButton(self.p_high)
-        self.buttongroup.addButton(self.p_mid)
-        self.buttongroup.addButton(self.p_low)
-
-
-        self.layout = QVBoxLayout()
-        self.layout.addWidget(label, alignment= Qt.AlignmentFlag.AlignTop)
-        self.layout.addWidget(self.get_task_text, alignment= Qt.AlignmentFlag.AlignTop)
-        self.layout.addWidget(self.current_word_count_label, alignment= Qt.AlignmentFlag.AlignRight)
-        self.layout.addWidget(self.p_high)
-        self.layout.addWidget(self.p_mid)
-        self.layout.addWidget(self.p_low)
-        self.layout.addStretch()
-        self.layout.addWidget(self.buttonbox, alignment= Qt.AlignmentFlag.AlignBottom)
-        self.setLayout(self.layout)
-
-    def save(self):
-        prio = 'none'
-        if self.p_high.isChecked():
-            prio = 'high'
-        elif self.p_mid.isChecked():
-            prio = 'mid'
-        elif self.p_low.isChecked():
-            prio = 'low'
-
-        text = self.get_task_text.toPlainText()
-
-        add_task = Add_Task(self.parent, self.mainwindowlayout ,text, prio)
-        commit_new_task_data(text, str(datetime.datetime.now()), prio, 'Not Done', None)
-        add_task.add()
-        self.parent.on_task_added()
-        self.accept()
-    
-    def reject(self):
-        self.parent.on_task_added()
-        self.close()
-
-    def word_limit(self):
-        self.get_task_text.blockSignals(True)
-        current_text = self.get_task_text.toPlainText()
-        if len(current_text) > self.limit:
-            cursor = self.get_task_text.cursor()
-            turnacated_text = current_text[:self.limit]
-            self.get_task_text.setPlainText(turnacated_text)
-            self.get_task_text.setCursor(cursor)
-            
-        display_text = len(current_text)
-        self.current_word_count_label.setStyleSheet(f"""QLabel {{
-                                                    color : {primary};
-                                                    font-weight: bold;
-                                                    }}""")
-        if display_text >= 300:
-            display_text = 300   
-            self.current_word_count_label.setStyleSheet(f"""QLabel {{
-                                                    color : rgb{str(priority_mid)};
-                                                    font-weight: bold;
-                                                    }}""")
-        
-
-        self.current_word_count_label.setText(f'{display_text}/{self.limit}')
-
-        self.get_task_text.blockSignals(False)
-
- 
 class Custom_Scroll_Bar(QScrollBar):
     def __init__(self):
         super().__init__()
@@ -198,17 +97,18 @@ class Add_Task_No_dialog(QWidget):
 
         self.setStyleSheet(f"""
                            QPlainTextEdit {{
-                           background: {primary};
+                           background: {background};
                            }}
                            QPushButton {{
-                           background: {primary};
+                           background: {background};
                            border-radius: 5px;
                            }}
                            QRadioButton::indicator {{
                            image : none;
-                           }}
-                           
-                           
+                           }}""")
+        self.current_word_count_label.setStyleSheet(f"""QLabel {{
+                            color : {background};
+                            font-weight: bold;}}
                            """)
         self.p_high.setStyleSheet(f"""QRadioButton
                                 {{
@@ -264,7 +164,7 @@ class Add_Task_No_dialog(QWidget):
             
         display_text = len(current_text)
         self.current_word_count_label.setStyleSheet(f"""QLabel {{
-                                                color : {primary};
+                                                color : {background};
                                                 font-weight: bold;
                                                 }}""")
         if display_text >= 300:
@@ -288,8 +188,8 @@ class Add_Task_No_dialog(QWidget):
             prio = 'low'
         
         text = self.get_task_text.toPlainText().strip()
-        add_task = Add_Task(self.parent, self.mainwindowlayout ,text, prio)
-        commit_new_task_data(text, str(datetime.datetime.now()), prio, 'Not Done', None)
+        task_id = commit_new_task_data(text, str(datetime.datetime.now()), prio, 'not done', None)
+        add_task = Add_Task(self.parent, self.mainwindowlayout ,text, prio, 'not done', task_id)
         add_task.add()
 
         self.parent.on_task_added()
