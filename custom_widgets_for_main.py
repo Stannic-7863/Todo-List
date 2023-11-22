@@ -16,9 +16,10 @@ from PyQt6.QtWidgets import (QApplication,
                              QRadioButton,
                              QButtonGroup,
                              QScrollBar,
-                             QSizePolicy,
-                             QLineEdit
+                             QSizePolicy
                              )
+import datetime
+from load_save_data import commit_new_task_data
 
 
 class Add_task_dialog(QDialog):
@@ -86,6 +87,7 @@ class Add_task_dialog(QDialog):
         text = self.get_task_text.toPlainText()
 
         add_task = Add_Task(self.parent, self.mainwindowlayout ,text, prio)
+        commit_new_task_data(text, str(datetime.datetime.now()), prio, 'Not Done', None)
         add_task.add()
         self.parent.on_task_added()
         self.accept()
@@ -287,6 +289,7 @@ class Add_Task_No_dialog(QWidget):
         
         text = self.get_task_text.toPlainText().strip()
         add_task = Add_Task(self.parent, self.mainwindowlayout ,text, prio)
+        commit_new_task_data(text, str(datetime.datetime.now()), prio, 'Not Done', None)
         add_task.add()
 
         self.parent.on_task_added()

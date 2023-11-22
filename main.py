@@ -144,6 +144,7 @@ class MainWindow(QMainWindow):
     def on_task_added(self):
         self.getting_task = False
 
+
 if __name__ == '__main__':
     app = QApplication([])
     windows = MainWindow()

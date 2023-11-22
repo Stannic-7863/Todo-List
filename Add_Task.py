@@ -8,6 +8,8 @@ from PyQt6.QtWidgets import (QCheckBox,
                              QLabel
                              )
 from settings import *
+from load_save_data import change_priority_db
+import datetime
 
 class custom_checkbox(QCheckBox):
     def __init__(self, text, option_menu):
@@ -42,6 +44,7 @@ class Add_Task:
         self.text = task_name
         self.priority_str = prio
         self.mainwindowlayout = mainlayout
+        
 
     def add(self):
         self.text = self.text.strip()
@@ -110,11 +113,14 @@ class Add_Task:
         widget.deleteLater()
     
     def change_prio(self, prio):
+        previous_prio = self.priority_str
         current = self.color
         self.priority_str = prio
         self.color = self.get_color(prio)
         if self.check_box.isChecked() == False:
             start_animation(self.check_box, current , self.color)
+
+        change_priority_db(self.text, previous_prio, self.priority_str)
 
     def get_color(self, prio):
         self.color = priority_none
