@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (QCheckBox,
                              QApplication
                              )
 from settings import *
-from load_save_data import change_priority_db, change_status_db
+from load_save_data import change_priority_db, change_status_db, delete_task_db
 import datetime
 
 class custom_checkbox(QCheckBox):
@@ -123,7 +123,9 @@ class Add_Task:
         menu.addMenu(priority_menu)
     
     def delete_task(self, widget: QCheckBox):
+        delete_task_db(self.task_id)
         widget.deleteLater()
+
     
     def change_prio(self, prio):
         previous_prio = self.priority_str

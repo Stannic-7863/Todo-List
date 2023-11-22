@@ -106,6 +106,26 @@ def change_status_db(prev_status, new_status, task_id):
 
     connection.commit()
 
+def delete_task_db(_id):
+    cursor.execute("""
+    SELECT task_id, priority_id, status_id, category_id
+    FROM main
+    INNER JOIN tasks USING(task_id)
+    INNER JOIN priority USING(priority_id)
+    INNER JOIN status USING(status_id)
+    INNER JOIN category USING(category_id)
+    WHERE task_id = ?
+    """, (_id,))
+    result = cursor.fetchone()
+    task_id, priority_id, status_id, category_id = result
+
+    cursor.execute("DELETE FROM main WHERE task_id = ?", (task_id,))
+    cursor.execute("DELETE FROM priority WHERE priority_id = ?", (priority_id,))
+    cursor.execute("DELETE FROM status WHERE status_id = ?", (status_id,))
+    cursor.execute("DELETE FROM category WHERE category_id = ?", (category_id,))
+
+    connection.commit()
+
 def fetch_data():
     cursor.execute("""
     SELECT task_name, current_priority, current_status, category, task_id
