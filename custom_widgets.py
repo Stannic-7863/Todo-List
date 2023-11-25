@@ -47,6 +47,9 @@ class Add_Task_No_dialog(QWidget):
         fontfamily = fontinfo[0] if fontinfo else 'Areil'
         QApplication.setFont(QFont(fontfamily))
 
+        self.ui_init()
+
+    def ui_init(self):
         self.get_task_text_widget_layout = QVBoxLayout()
         self.get_task_text_widget = QWidget()
         self.get_task_text_widget.setLayout(self.get_task_text_widget_layout)
@@ -60,6 +63,10 @@ class Add_Task_No_dialog(QWidget):
 
         self.current_word_count_label = QLabel()
         self.current_word_count_label.setText(f'{len(self.get_task_text.toPlainText())}/{self.limit}')
+        self.current_word_count_label.setStyleSheet(f"""QLabel {{
+                            color : {background};
+                            font-weight: bold;}}
+                           """)
 
         priority_button_container = QWidget()
         priority_button_container_layout = QHBoxLayout()
@@ -73,43 +80,6 @@ class Add_Task_No_dialog(QWidget):
         priority_button_group.addButton(self.p_high)
         priority_button_group.addButton(self.p_mid)
         priority_button_group.addButton(self.p_low)
-
-        self.save_button = QPushButton('Save')
-        cancel_shortcut = QShortcut(QKeySequence('escape'), self)
-        cancel_shortcut.activated.connect(self.on_cancel)
-        
-        self.save_button.setFixedSize(QSize(70, 35))
-    
-        self.main_layout.addWidget(self.get_task_text_widget)
-        priority_button_container_layout.addWidget(priority_label, alignment=Qt.AlignmentFlag.AlignLeft)
-        priority_button_container_layout.addWidget(self.p_high, alignment=Qt.AlignmentFlag.AlignLeft)
-        priority_button_container_layout.addWidget(self.p_mid, alignment=Qt.AlignmentFlag.AlignLeft)
-        priority_button_container_layout.addWidget(self.p_low, alignment=Qt.AlignmentFlag.AlignLeft)
-        priority_button_container_layout.addStretch()
-        priority_button_container_layout.addWidget(self.current_word_count_label, alignment=Qt.AlignmentFlag.AlignRight)
-        self.main_layout.addWidget(priority_button_container)   
-        self.main_layout.addWidget(self.save_button, alignment=Qt.AlignmentFlag.AlignRight)
-
-        self.setLayout(self.main_layout)
-
-        self.save_button.clicked.connect(self.on_save)
-        
-
-        self.setStyleSheet(f"""
-                           QPlainTextEdit {{
-                           background: {background};
-                           }}
-                           QPushButton {{
-                           background: {background};
-                           border-radius: 5px;
-                           }}
-                           QRadioButton::indicator {{
-                           image : none;
-                           }}""")
-        self.current_word_count_label.setStyleSheet(f"""QLabel {{
-                            color : {background};
-                            font-weight: bold;}}
-                           """)
         self.p_high.setStyleSheet(f"""QRadioButton
                                 {{
                                     background-color: rgb{priority_high};
@@ -152,6 +122,43 @@ class Add_Task_No_dialog(QWidget):
                                 }}
                                 """)
 
+        self.save_button = QPushButton('Save')
+        cancel_shortcut = QShortcut(QKeySequence('escape'), self)
+        cancel_shortcut.activated.connect(self.on_cancel)
+        
+        self.save_button.setFixedSize(QSize(70, 35))
+    
+        self.main_layout.addWidget(self.get_task_text_widget)
+        priority_button_container_layout.addWidget(priority_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        priority_button_container_layout.addWidget(self.p_high, alignment=Qt.AlignmentFlag.AlignLeft)
+        priority_button_container_layout.addWidget(self.p_mid, alignment=Qt.AlignmentFlag.AlignLeft)
+        priority_button_container_layout.addWidget(self.p_low, alignment=Qt.AlignmentFlag.AlignLeft)
+        priority_button_container_layout.addStretch()
+        priority_button_container_layout.addWidget(self.current_word_count_label, alignment=Qt.AlignmentFlag.AlignRight)
+        self.main_layout.addWidget(priority_button_container)   
+        self.main_layout.addWidget(self.save_button, alignment=Qt.AlignmentFlag.AlignRight)
+
+        self.setLayout(self.main_layout)
+
+        self.save_button.clicked.connect(self.on_save)
+        
+
+        self.setStyleSheet(f"""
+                           QWidget {{border-radius: 5px}}
+                           QPlainTextEdit {{
+                           background: {background};
+                           border-radius: 5px
+                           }}
+                           QPushButton {{
+                           background: {background};
+                           border-radius: 5px;
+                           }}
+                           QRadioButton::indicator {{
+                           image : none;
+                           }}""")
+        
+        
+    
 
     def word_limit(self):
         self.get_task_text.blockSignals(True)
@@ -177,6 +184,9 @@ class Add_Task_No_dialog(QWidget):
         self.current_word_count_label.setText(f'{display_text}/{self.limit}')
 
         self.get_task_text.blockSignals(False)
+
+        
+
     
     def on_save(self):
         prio = 'None'
@@ -188,7 +198,9 @@ class Add_Task_No_dialog(QWidget):
             prio = 'low'
         
         text = self.get_task_text.toPlainText().strip()
-        task_id = commit_new_task_data(text, str(datetime.datetime.now()), prio, 'not done', None)
+        current_datetime = datetime.datetime.now()
+        formatted_date = current_datetime.strftime('%Y-%m-%d')
+        task_id = commit_new_task_data(text, str(formatted_date), prio, 'not done', None)
         add_task = Add_Task(self.parent, self.mainwindowlayout ,text, prio, 'not done', task_id)
         add_task.add()
 
@@ -208,7 +220,6 @@ def start_animation(widget, color_from, color_to):
     animation.setEndValue(QColor(qRgb(color_to[0], color_to[1], color_to[2])))
     animation.valueChanged.connect(lambda value: change(widget, value.name()))
     animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
-
 
 def change(widget, color):
     widget.setStyleSheet(f"""

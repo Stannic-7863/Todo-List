@@ -69,7 +69,7 @@ class Add_Task:
         self.options = self.create_task_options()
         self.check_box = custom_checkbox(self.text, self.options)
         self.mainwindowlayout.insertWidget(1, self.check_box, alignment=Qt.AlignmentFlag.AlignTop)
-        self.check_box.stateChanged.connect(lambda value: self.on_state_changed(value, self.color))
+        self.check_box.stateChanged.connect(lambda value: self.on_state_changed(value, self.color, self.parent))
         change_color(self.check_box, f"rgb{str(self.color)}")
 
         if self.status == 'done':
@@ -148,19 +148,24 @@ class Add_Task:
         
         return self.color
     
-
-    def on_state_changed(self, value, color):
+    def on_state_changed(self, value, color, parent):
         state = Qt.CheckState(value)
         current = self.status
 
+        current_datetime = datetime.datetime.now()
+        formatted_date = current_datetime.strftime('%Y-%m-%d')
+        
         if state == Qt.CheckState.Unchecked:
             start_animation(self.check_box, task_done, color)
             self.status = 'not done'
-            change_status_db(current, self.status, self.task_id)
+            change_status_db(current, self.status, self.task_id, None) 
         if state == Qt.CheckState.Checked:
             start_animation(self.check_box, color, task_done)
             self.status = 'done'
-            change_status_db(current, self.status, self.task_id)
+            change_status_db(current, self.status, self.task_id, formatted_date)
+         
+        new_data = parent.get_task_status_data()
+        parent.piegraph.update_data(new_data)
 
 def start_animation(checkbox, color_from, color_to):
     animation = QVariantAnimation(checkbox)

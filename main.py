@@ -1,7 +1,6 @@
-import typing
 from settings import *
 from custom_widgets import *
-from PySide6.QtGui import QFont, QFontDatabase, QIcon, QShortcut, QKeySequence
+from PySide6.QtGui import QFont, QFontDatabase, QIcon, QPainter
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtWidgets import (QApplication,
                              QMainWindow,
@@ -11,11 +10,15 @@ from PySide6.QtWidgets import (QApplication,
                              QScrollArea,
                              QPushButton
                              )
-from db_data_functions import fetch_data
-    
+from PySide6 import QtCharts
+from db_data_functions import fetch_data, get_task_status_count
+from test import PieGraph
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        task_status_data = []
+        self.piegraph = PieGraph(task_status_data)
         self.font_init()
         self.ui_init()
 
@@ -28,7 +31,7 @@ class MainWindow(QMainWindow):
     def ui_init(self):
         self.getting_task = False
 
-        self.setWindowTitle('Todo List')
+        self.setWindowTitle('Yarikata')
         self.setMinimumHeight(800)
         self.setMinimumWidth(700)
 
@@ -42,19 +45,21 @@ class MainWindow(QMainWindow):
 
         self.statswidget = QWidget()
         self.statswidget_layout = QVBoxLayout()
-        self.statswidget.setLayout(self.taskwidget_layout)
-        self.central_layout.addWidget(self.statswidget)
-        self.central_layout.addWidget(taskwidget)
+        self.statswidget.setLayout(self.statswidget_layout)
+        self.statswidget.setFixedWidth((QApplication.primaryScreen().size().width())/2)
+        
         
         scroll = QScrollArea()
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setWidgetResizable(True)
-        scroll.setWidget(central_widget)
+        scroll.setWidget(taskwidget)
         custom_scroll = Custom_Scroll_Bar()
         scroll.setVerticalScrollBar(custom_scroll)
         
-        self.setCentralWidget(scroll)
+        self.central_layout.addWidget(scroll)
+        self.central_layout.addWidget(self.statswidget)
+        self.setCentralWidget(central_widget)
         
         self.addtask = QPushButton()
         self.addtask.setIcon(QIcon('./data/icons/plus.png'))
@@ -72,6 +77,17 @@ class MainWindow(QMainWindow):
             add_task = Add_Task(self, self.taskwidget_layout, task_name, prio, status, task_id)
             add_task.add()
 
+        self.pie_chart_widget = QWidget()
+        self.pie_chart_widget_layout = QVBoxLayout()
+        self.pie_chart_widget.setLayout(self.pie_chart_widget_layout)
+        
+        task_status_data = self.get_task_status_data()
+        self.piegraph = PieGraph(task_status_data)
+        piegraph_veiw = QtCharts.QChartView(self.piegraph)
+        piegraph_veiw.setRenderHint(QPainter.Antialiasing)
+        self.pie_chart_widget_layout.addWidget(piegraph_veiw)
+
+        self.statswidget_layout.addWidget(self.pie_chart_widget)
 
         self.setStyleSheet(f"""
                            QWidget {{
@@ -126,7 +142,9 @@ class MainWindow(QMainWindow):
                              background: {background};
                              }}
                             """)
+        
         self.showMaximized()
+
     def on_addtask_clicked(self):
         if not self.getting_task:
             self.getting_task = True
@@ -137,8 +155,17 @@ class MainWindow(QMainWindow):
             layout.addWidget(add_task_no_dailog_widget)
             self.taskwidget_layout.insertWidget(1 , self.placeholder_widget) 
 
-            self.placeholder_widget.setStyleSheet(f"""background : {primary}; max-width: 1200;""")
-          
+            self.placeholder_widget.setStyleSheet(f"""background : {primary}; max-width: 1200; border-radius: 5px""")
+
+    def get_task_status_data(self):
+        not_done, done = get_task_status_count()
+        
+        undone_task = {'name' : 'Not Completed', 'value': not_done, 'primary_color': QColor("#82d3e5"), 'secondary_color': QColor("#cfeef5")}
+        done_task = {'name' : 'Completed', 'value': done, 'primary_color': QColor("#fd635c"), 'secondary_color': QColor("#fdc4c1")}
+        data = [undone_task, done_task]
+
+        return data
+ 
     def on_task_added(self):
         self.getting_task = False
 
