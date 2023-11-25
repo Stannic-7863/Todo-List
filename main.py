@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (QApplication,
                              )
 from PySide6 import QtCharts
 from db_data_functions import fetch_data, get_task_status_count
-from test import PieGraph
+from stat_widgets import PieGraph
 
 class MainWindow(QMainWindow):
     def __init__(self):
