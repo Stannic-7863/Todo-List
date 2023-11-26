@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (QApplication,
                              )
 from PySide6 import QtCharts
 from db_data_functions import fetch_data, get_task_status_count
-from stat_widgets import PieGraph
+from stat_widgets import *
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -46,8 +46,7 @@ class MainWindow(QMainWindow):
         self.statswidget = QWidget()
         self.statswidget_layout = QVBoxLayout()
         self.statswidget.setLayout(self.statswidget_layout)
-        self.statswidget.setFixedWidth((QApplication.primaryScreen().size().width())/2)
-        
+        self.statswidget.setFixedWidth((QApplication.primaryScreen().size().width())/2.5)
         
         scroll = QScrollArea()
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
@@ -74,7 +73,7 @@ class MainWindow(QMainWindow):
         data = fetch_data()
         for items in data:
             task_name, prio, status, category, task_id = items
-            add_task = Add_Task(self, self.taskwidget_layout, task_name, prio, status, task_id)
+            add_task = Add_Task(self, self.taskwidget_layout, task_name, prio, status, task_id, loading_data=True)
             add_task.add()
 
         self.pie_chart_widget = QWidget()
@@ -168,6 +167,8 @@ class MainWindow(QMainWindow):
  
     def on_task_added(self):
         self.getting_task = False
+        data = self.get_task_status_data()
+        self.piegraph.update_data(data)
 
 
 if __name__ == '__main__':

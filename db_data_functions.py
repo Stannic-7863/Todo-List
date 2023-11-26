@@ -194,3 +194,18 @@ def get_task_data_for_bar_chart(LIMIT=14):
     status_lst.append(status_dict)    
     return priority_lst, status_lst, date_lst
 
+
+def get_done_with_dates():
+    cursor.execute("""
+    SELECT 
+        last_marked_done, COUNT(*) current_status
+    FROM status
+    WHERE current_status = 'done'
+    GROUP BY strftime('%Y-%m-%d', last_marked_done)
+""")
+
+    data_dict = {}
+    for item in cursor.fetchall():
+        date, value = item
+        data_dict[date] = value 
+    return data_dict

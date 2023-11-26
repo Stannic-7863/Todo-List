@@ -156,9 +156,6 @@ class Add_Task_No_dialog(QWidget):
                            QRadioButton::indicator {{
                            image : none;
                            }}""")
-        
-        
-    
 
     def word_limit(self):
         self.get_task_text.blockSignals(True)
@@ -201,7 +198,7 @@ class Add_Task_No_dialog(QWidget):
         current_datetime = datetime.datetime.now()
         formatted_date = current_datetime.strftime('%Y-%m-%d')
         task_id = commit_new_task_data(text, str(formatted_date), prio, 'not done', None)
-        add_task = Add_Task(self.parent, self.mainwindowlayout ,text, prio, 'not done', task_id)
+        add_task = Add_Task(self.parent, self.mainwindowlayout ,text, prio, 'not done', task_id, loading_data=False)
         add_task.add()
 
         self.parent.on_task_added()
