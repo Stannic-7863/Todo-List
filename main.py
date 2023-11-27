@@ -19,6 +19,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         task_status_data = []
         self.piegraph = PieGraph(task_status_data)
+        self.priority_bar_chart = PriorityBarChart()
         self.font_init()
         self.ui_init()
 
@@ -39,25 +40,33 @@ class MainWindow(QMainWindow):
         central_widget = QWidget()
         central_widget.setLayout(self.central_layout)
 
-        taskwidget = QWidget()
+        self.taskwidget = QWidget()
         self.taskwidget_layout = QVBoxLayout()
-        taskwidget.setLayout(self.taskwidget_layout)
+        self.taskwidget.setLayout(self.taskwidget_layout)
 
         self.statswidget = QWidget()
         self.statswidget_layout = QVBoxLayout()
         self.statswidget.setLayout(self.statswidget_layout)
-        self.statswidget.setFixedWidth((QApplication.primaryScreen().size().width())/2.5)
         
         scroll = QScrollArea()
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setWidgetResizable(True)
-        scroll.setWidget(taskwidget)
+        scroll.setWidget(self.taskwidget)
         custom_scroll = Custom_Scroll_Bar()
         scroll.setVerticalScrollBar(custom_scroll)
+
+        stat_scroll = QScrollArea()
+        stat_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        stat_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        stat_scroll.setWidgetResizable(True)
+        stat_scroll.setWidget(self.statswidget)
+        custom_scroll = Custom_Scroll_Bar()
+        stat_scroll.setVerticalScrollBar(custom_scroll)
+        stat_scroll.setFixedWidth((QApplication.primaryScreen().size().width())/2.5)
         
         self.central_layout.addWidget(scroll)
-        self.central_layout.addWidget(self.statswidget)
+        self.central_layout.addWidget(stat_scroll)
         self.setCentralWidget(central_widget)
         
         self.addtask = QPushButton()
@@ -86,6 +95,14 @@ class MainWindow(QMainWindow):
         piegraph_veiw.setRenderHint(QPainter.Antialiasing)
         self.pie_chart_widget_layout.addWidget(piegraph_veiw)
 
+        self.priority_bar_chart_widget = QWidget()
+        self.priority_bar_chart_widget_layout = QVBoxLayout()
+        self.priority_bar_chart_widget.setLayout(self.priority_bar_chart_widget_layout)
+        self.priority_bar_chart = PriorityBarChart()
+        barchart_veiw = QtCharts.QChartView(self.priority_bar_chart)
+        barchart_veiw.setRenderHint(QPainter.RenderHint.Antialiasing)
+        self.priority_bar_chart_widget_layout.addWidget(barchart_veiw)
+        self.statswidget_layout.addWidget(self.priority_bar_chart_widget)
         self.statswidget_layout.addWidget(self.pie_chart_widget)
 
         self.setStyleSheet(f"""
