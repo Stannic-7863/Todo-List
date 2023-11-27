@@ -15,3 +15,6 @@ priority_mid = (255,167,0)
 priority_high = (237,76,76)
 priority_none = (57, 62, 70)
 task_done = (11, 219, 123)
+
+background_hex = '#222831'
+primary_hex = '#393E46'
