@@ -1,14 +1,11 @@
 from PySide6 import QtCharts
 from PySide6.QtGui import QColor, QBrush, qRgb
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget, QVBoxLayout
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-import seaborn as sns
-import pandas as pd
-import matplotlib.pyplot as plt
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QMainWindow, QApplication
 from functools import partial
 from settings import *
-from db_data_functions import get_done_with_dates
+from db_data_functions import get_priority_data_for_bar_chart
+import sys
 
 
 class PieGraph(QtCharts.QChart):
@@ -69,7 +66,7 @@ class PieGraph(QtCharts.QChart):
             slice_.setLabel(name)
 
 
-        slice_.setExplodeDistanceFactor(0.2)
+        slice_.setExplodeDistanceFactor(0.1)
         slice_.setExploded(is_hovered)
 
     def update_data(self, new_data):
@@ -87,4 +84,74 @@ class PieGraph(QtCharts.QChart):
         self.outer.clear()
         self.inner.clear()
 
+class PriorityBarChart(QtCharts.QChart):
+    def __init__(self):
+        super().__init__()
+        self.days = 18
+        self.barchart = QtCharts.QStackedBarSeries()
+        self.barchart.setBarWidth(1)
+        self.addSeries(self.barchart)
+        self.update()
+        
+    def create_bars(self):
+        for index ,item in enumerate(self.priority_data):
+            value_index = [self.all_dates.index(item) for item in self.dates_done if item in self.all_dates]
+            bar_lst = [0 for _ in range(len(self.all_dates))]
+
+            for index, val in enumerate(value_index):
+                bar_lst[val] = item['values'][index]
+
+            barset = QtCharts.QBarSet(item['label'])
+            barset.append(bar_lst)
+            self.barchart.append(barset)
+            barset.setColor(QColor(qRgb(item['color'][0],item['color'][1],item['color'][2])))
+        
+        self.addSeries(self.barchart)
+        self.setTitle(f"Tasks done in the previous {self.limit} days")
+        self.setAnimationOptions(QtCharts.QChart.AnimationOption.SeriesAnimations)
+        self.legend().setVisible(True)
+        self.legend().setAlignment(Qt.AlignBottom)
+        self.legend().setLabelBrush(QColor(qRgb(255,255,255)))
+        self.setTitleBrush(QColor(qRgb(255,255,255)))
+        self.setBackgroundBrush(QColor(qRgb(qbackground[0], qbackground[1], qbackground[2])))
+
+    
+    def update(self):
+        self.get_variables()
+        self.set_axis()
+        self.create_bars()
+
+    def get_variables(self):
+        self.priority_data, self.dates_done, self.all_dates, self.limit = get_priority_data_for_bar_chart(self.days)
+        self.removeSeries(self.barchart)
+        self.barchart = QtCharts.QStackedBarSeries()
+        self.barchart.setBarWidth(1)
+    
+    def set_axis(self):
+        x = self.axisX()
+        if x :
+            self.removeAxis(x)
+
+        self.dates = []
+        for item in self.all_dates:
+            self.dates.append(item.split("-")[2])
+
+        self.addSeries(self.barchart)
+        self.date_axis = QtCharts.QBarCategoryAxis()
+        self.date_axis.append(self.dates)
+        self.date_axis.setLabelsColor(QColor(qRgb(255,255,255)))
+        self.setAxisX(self.date_axis)
+        self.barchart.attachAxis(self.date_axis)
+        self.removeSeries(self.barchart)
+
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    window = QMainWindow()
+    widget = PriorityBarChart()
+    widget_view = QtCharts.QChartView()
+    widget_view.setChart(widget)
+    window.setCentralWidget(widget_view)
+    window.show()
+    app.exec()
 
