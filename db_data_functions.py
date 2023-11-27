@@ -1,4 +1,6 @@
 import sqlite3
+from settings import *
+from datetime import datetime, timedelta
 
 data_base_path = './data/task_data/task_database.db'
 connection = sqlite3.connect(data_base_path)
@@ -23,7 +25,7 @@ def main():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS status (
                 status_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                current_status TEXT
+                current_status TEXT,
                 last_marked_done TEXT
         )
     """)
@@ -58,7 +60,7 @@ def commit_new_task_data(task_name, time_created, current_priority, current_stat
     task_id = cursor.lastrowid
     cursor.execute("INSERT INTO priority (current_priority) VALUES (?)", (current_priority,))
     prioirty_id = cursor.lastrowid
-    cursor.execute("INSERT INTO status (current_status, last_marked_done) VALUES (?, ?)", (current_status, None))
+    cursor.execute("INSERT INTO status (current_status, last_marked_done) VALUES (?, ?)", (current_status, time_created))
     status_id = cursor.lastrowid
     cursor.execute("INSERT INTO category (category) VALUES (?)", (category,))
     category_id = cursor.lastrowid
@@ -151,48 +153,51 @@ def get_task_status_count():
 
     return not_done, done
 
-def get_task_data_for_bar_chart(LIMIT=14):
+def get_priority_data_for_bar_chart(LIMIT=20):
+ 
     cursor.execute("""
     SELECT 
-        strftime('%Y-%m-%d', time_created) AS time,
+        strftime('%Y-%m-%d', last_marked_done) AS time,
         SUM(CASE WHEN current_priority = 'high' AND current_status = 'done' THEN 1 ELSE 0 END),
         SUM(CASE WHEN current_priority = 'mid' AND current_status = 'done' THEN 1 ELSE 0 END),
         SUM(CASE WHEN current_priority = 'low' AND current_status = 'done' THEN 1 ELSE 0 END),
-        SUM(CASE WHEN current_priority = 'none' AND current_status = 'done' THEN 1 ELSE 0 END),
-        SUM(CASE WHEN current_status = 'done' THEN 1 ELSE 0 END),
-        SUM(CASE WHEN current_status = 'not done' THEN 1 ELSE 0 END)
+        SUM(CASE WHEN current_priority = 'none' AND current_status = 'done' THEN 1 ELSE 0 END)
     FROM main
     INNER JOIN tasks USING(task_id)
     INNER JOIN priority USING(priority_id)
     INNER JOIN status USING(status_id)
-    WHERE time_created >= strftime('%Y-%m-%d', 'now', ?)
+    WHERE time >= strftime('%Y-%m-%d', 'now', ?)
     GROUP BY time
 """, (f'-{LIMIT} days',))
+    all_dates = [datetime.now() - timedelta(i) for i in range(LIMIT)]
+    all_dates = [date.strftime('%Y-%m-%d') for date in all_dates]
+    all_dates.reverse()
+    data_lst = []
+    dates_done = []
+    high = {'label': 'High', 'values': []}
+    mid = {'label': 'Mid', 'values': []}
+    low = {'label': 'Low', 'values': []}
+    none = {'label': 'None', 'values': []}
     
-    priority_lst = []
-    status_lst = []
-    priority_dict = {}
-    status_dict = {}
-    date_lst = []
-    priority_dict['priority high'] = []
-    priority_dict['priority mid'] = []
-    priority_dict['priority low'] = []
-    priority_dict['priority none'] = []
-    status_dict['status done'] = []
-    status_dict['status not done'] = []
     for item in cursor.fetchall():
-        date_created, high, mid, low, none, done, not_done = item
-        priority_dict['priority high'].append(high)
-        priority_dict['priority mid'].append(mid)
-        priority_dict['priority low'].append(low)
-        priority_dict['priority none'].append(none)
-        status_dict['status done'].append(done)
-        status_dict['status not done'].append(not_done)
-        date_lst.append(date_created)
-    
-    priority_lst.append(priority_dict)
-    status_lst.append(status_dict)    
-    return priority_lst, status_lst, date_lst
+        date_done, h, m, l, n = item
+        high['values'].append(h)
+        mid['values'].append(m)
+        low['values'].append(l)
+        none['values'].append(n)
+        dates_done.append(date_done)
+
+    high['color'] = priority_high
+    mid['color'] = priority_mid
+    low['color'] = priority_low
+    none['color'] = priority_none
+        
+    data_lst.append(high)
+    data_lst.append(mid)
+    data_lst.append(low)
+    data_lst.append(none)
+   
+    return data_lst, dates_done, all_dates, LIMIT
 
 
 def get_done_with_dates():
