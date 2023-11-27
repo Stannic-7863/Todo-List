@@ -40,7 +40,7 @@ class custom_checkbox(QCheckBox):
 
 
 class Add_Task:
-    def __init__(self, parent, mainlayout, task_name, prio, status, task_id, loading_data):
+    def __init__(self, parent, mainlayout, task_name, prio, status, task_id, loading_data=False):
         self.loading_data = loading_data
         self.parent = parent
         self.text = task_name
@@ -59,6 +59,7 @@ class Add_Task:
         self.text = self.text.strip()
         if self.text.strip():
             self.create_task_widgets()
+        self.loading_data = False
         
     def create_task_widgets(self):
         self.color = priority_none
@@ -159,19 +160,17 @@ class Add_Task:
         if state == Qt.CheckState.Unchecked:
             start_animation(self.check_box, task_done, color)
             self.status = 'not done'
-            if not self.loading_data:
-                change_status_db(current, self.status, self.task_id, None) 
+            if not self.loading_data: 
+                change_status_db(current, self.status, self.task_id, formatted_date) 
         if state == Qt.CheckState.Checked:
             start_animation(self.check_box, color, task_done)
             self.status = 'done'
             if not self.loading_data:
                 change_status_db(current, self.status, self.task_id, formatted_date)
-        
-        if self.loading_data:
-            self.loading_data = False
-         
+
         new_data = parent.get_task_status_data()
         parent.piegraph.update_data(new_data)
+        parent.priority_bar_chart.update()
 
 def start_animation(checkbox, color_from, color_to):
     animation = QVariantAnimation(checkbox)
