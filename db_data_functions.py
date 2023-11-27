@@ -200,7 +200,7 @@ def get_priority_data_for_bar_chart(LIMIT=20):
     return data_lst, dates_done, all_dates, LIMIT
 
 
-def get_done_with_dates():
+def get_done_with_dates_for_heat_map():
     cursor.execute("""
     SELECT 
         last_marked_done, COUNT(*) current_status
@@ -214,3 +214,4 @@ def get_done_with_dates():
         date, value = item
         data_dict[date] = value 
     return data_dict
+
