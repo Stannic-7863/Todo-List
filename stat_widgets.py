@@ -1,16 +1,20 @@
 from PySide6 import QtCharts
 from PySide6.QtGui import QColor, QBrush, qRgb
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QMainWindow, QApplication
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QMainWindow, QApplication, QGraphicsSimpleTextItem
 from functools import partial
 from settings import *
-from db_data_functions import get_priority_data_for_bar_chart
-import sys
+from db_data_functions import get_priority_data_for_bar_chart, get_done_with_dates_for_heat_map
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+import matplotlib.pyplot as plt
+import calmap, datetime, sys
+import pandas as pd
 
 
 class PieGraph(QtCharts.QChart):
     def __init__(self, data):
         super().__init__()
+        self.setMinimumHeight(400)
         self._data = data 
         self.setAnimationOptions(QtCharts.QChart.SeriesAnimations)
         self.outer = QtCharts.QPieSeries()
@@ -87,6 +91,7 @@ class PieGraph(QtCharts.QChart):
 class PriorityBarChart(QtCharts.QChart):
     def __init__(self):
         super().__init__()
+        self.setMinimumHeight(500)
         self.days = 18
         self.barchart = QtCharts.QStackedBarSeries()
         self.barchart.setBarWidth(1)
@@ -94,7 +99,7 @@ class PriorityBarChart(QtCharts.QChart):
         self.update()
         
     def create_bars(self):
-        for index ,item in enumerate(self.priority_data):
+        for idx ,item in enumerate(self.priority_data):
             value_index = [self.all_dates.index(item) for item in self.dates_done if item in self.all_dates]
             bar_lst = [0 for _ in range(len(self.all_dates))]
 
@@ -105,6 +110,7 @@ class PriorityBarChart(QtCharts.QChart):
             barset.append(bar_lst)
             self.barchart.append(barset)
             barset.setColor(QColor(qRgb(item['color'][0],item['color'][1],item['color'][2])))
+            barset.hovered.connect(partial(self.show_info_on_hover, item['label'], bar_lst, self.all_dates))
         
         self.addSeries(self.barchart)
         self.setTitle(f"Tasks done in the previous {self.limit} days")
@@ -144,14 +150,50 @@ class PriorityBarChart(QtCharts.QChart):
         self.barchart.attachAxis(self.date_axis)
         self.removeSeries(self.barchart)
 
+    def show_info_on_hover(self, label, value, all_dates, status, barindex):
+        if status:
+            self.setTitle(f"Priority: {label} | Tasks Done: {value[barindex]} | At Day: {datetime.datetime.strptime(all_dates[barindex], "%Y-%m-%d").strftime("%A")} ,{all_dates[barindex]}")
+        else:
+            self.setTitle(f"Tasks done in the previous {self.limit} days")
+
+class HeatMap(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setMinimumHeight(300)
+        fig, self.ax = plt.subplots(figsize=(4,3))
+        self.ax.set_title('Daily Streak HeatMap', color='white')
+        self.ax.tick_params(axis='x', labelcolor='white')
+        self.ax.tick_params(axis='y', labelcolor='white')
+        fig.patch.set_facecolor(background_hex)
+        self.canvas = FigureCanvas(fig)
+
+        layout = QVBoxLayout()
+        layout.addWidget(self.canvas)
+        self.setLayout(layout)
+        self.ax.set_facecolor(primary_hex)
+        self.get_heatmap()
+
+    def get_heatmap(self):
+        data_df = self.get_data()
+        self.ax.clear()
+
+        calmap.yearplot(data_df['Value'], ax=self.ax, cmap='OrRd_r', fillcolor=background_hex, linewidth=0.009, dayticks=False)
+        self.canvas.draw()
+
+    def get_data(self):
+        data = get_done_with_dates_for_heat_map()
+
+        data_df = pd.DataFrame(list(data.items()), columns=['Date', 'Value'])
+        data_df['Date'] = pd.to_datetime(data_df['Date'])
+        data_df.set_index('Date', inplace=True)
+
+        return data_df
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = QMainWindow()
-    widget = PriorityBarChart()
-    widget_view = QtCharts.QChartView()
-    widget_view.setChart(widget)
-    window.setCentralWidget(widget_view)
+    widget = HeatMap()
+    window.setCentralWidget(widget)
     window.show()
     app.exec()
 
