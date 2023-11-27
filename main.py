@@ -17,9 +17,9 @@ from stat_widgets import *
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        task_status_data = []
-        self.piegraph = PieGraph(task_status_data)
+        self.piegraph = PieGraph([])
         self.priority_bar_chart = PriorityBarChart()
+        self.daily_streak_heatmap = HeatMap()
         self.font_init()
         self.ui_init()
 
@@ -48,26 +48,6 @@ class MainWindow(QMainWindow):
         self.statswidget_layout = QVBoxLayout()
         self.statswidget.setLayout(self.statswidget_layout)
         
-        scroll = QScrollArea()
-        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll.setWidgetResizable(True)
-        scroll.setWidget(self.taskwidget)
-        custom_scroll = Custom_Scroll_Bar()
-        scroll.setVerticalScrollBar(custom_scroll)
-
-        stat_scroll = QScrollArea()
-        stat_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        stat_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        stat_scroll.setWidgetResizable(True)
-        stat_scroll.setWidget(self.statswidget)
-        custom_scroll = Custom_Scroll_Bar()
-        stat_scroll.setVerticalScrollBar(custom_scroll)
-        stat_scroll.setFixedWidth((QApplication.primaryScreen().size().width())/2.5)
-        
-        self.central_layout.addWidget(scroll)
-        self.central_layout.addWidget(stat_scroll)
-        self.setCentralWidget(central_widget)
         
         self.addtask = QPushButton()
         self.addtask.setIcon(QIcon('./data/icons/plus.png'))
@@ -102,8 +82,32 @@ class MainWindow(QMainWindow):
         barchart_veiw = QtCharts.QChartView(self.priority_bar_chart)
         barchart_veiw.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.priority_bar_chart_widget_layout.addWidget(barchart_veiw)
+
+        self.daily_streak_heatmap = HeatMap()
+        self.statswidget_layout.addWidget(self.daily_streak_heatmap)
         self.statswidget_layout.addWidget(self.priority_bar_chart_widget)
         self.statswidget_layout.addWidget(self.pie_chart_widget)
+
+        task_scroll = QScrollArea()
+        task_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        task_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        task_scroll.setWidgetResizable(True)
+        task_scroll.setWidget(self.taskwidget)
+        custom_scroll_task = Custom_Scroll_Bar()
+        task_scroll.setVerticalScrollBar(custom_scroll_task)
+
+        stat_scroll = QScrollArea()
+        stat_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+        stat_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        stat_scroll.setWidgetResizable(True)
+        stat_scroll.setWidget(self.statswidget)
+        custom_scroll_stat = Custom_Scroll_Bar()
+        stat_scroll.setVerticalScrollBar(custom_scroll_stat)
+        stat_scroll.setMaximumWidth((QApplication.primaryScreen().size().width())/2.5)
+        
+        self.central_layout.addWidget(task_scroll)
+        self.central_layout.addWidget(stat_scroll)
+        self.setCentralWidget(central_widget)
 
         self.setStyleSheet(f"""
                            QWidget {{
@@ -128,7 +132,37 @@ class MainWindow(QMainWindow):
                                    background-color: {primary}
                                    }}
                                    """)
-        scroll.setStyleSheet(f"""
+        stat_scroll.setStyleSheet(f"""
+                             QScrollBar:vertical {{
+                             background: {background};
+                             width: 20px;
+                             border: 0px solid black;
+                             margin: 15px 10px 15px 0px
+                             }}
+
+                             QScrollBar::handle:vertical {{
+                             border: 0px solid black;
+                             border-radius : 5px;
+                             background-color : {primary}; 
+                             }}
+
+                             QScrollBar::sub-line:vertical {{
+                             background: {background};
+                             }}
+                             
+                             QScrollBar::add-line:vertical {{
+                             background: {background}; 
+                             }}
+
+                             QScrollBar::sub-page:vertical {{
+                             background: {background};
+                             }}
+
+                             QScrollBar::add-page:vertical {{
+                             background: {background};
+                             }}
+                            """)
+        task_scroll.setStyleSheet(f"""
                              QScrollBar:vertical {{
                              background: {background};
                              width: 20px;
