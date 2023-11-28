@@ -1,4 +1,4 @@
-import csv, datetime, functools
+import datetime
 from PySide6.QtGui import QIcon, QAction, QActionGroup,  QColor, qRgb, QFont, QFontDatabase
 from PySide6.QtCore import Qt, QSize, QVariantAnimation, QAbstractAnimation
 from PySide6.QtWidgets import (QCheckBox,
@@ -138,6 +138,8 @@ class Add_Task:
             start_animation(self.check_box, current , self.color)
 
         change_priority_db(previous_prio, self.priority_str, self.task_id)
+        if not self.loading_data:    
+            self.parent.priority_bar_chart.update()
 
     def get_color(self, prio):
         self.color = priority_none
@@ -167,10 +169,10 @@ class Add_Task:
             self.status = 'done'
             if not self.loading_data:
                 change_status_db(current, self.status, self.task_id, formatted_date)
-
-        new_data = parent.get_task_status_data()
-        parent.piegraph.update_data(new_data)
-        parent.priority_bar_chart.update()
+        if not self.loading_data:    
+            parent.priority_bar_chart.update()
+            new_data = parent.get_task_status_data()
+            parent.piegraph.update_data(new_data)
 
 def start_animation(checkbox, color_from, color_to):
     animation = QVariantAnimation(checkbox)
