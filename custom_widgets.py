@@ -1,5 +1,3 @@
-import typing
-from PySide6 import QtCore, QtGui
 from settings import *
 from Add_Task import Add_Task
 from PySide6.QtGui import QFont, QFontDatabase, QColor, qRgb, QShortcut, QKeySequence
@@ -9,8 +7,6 @@ from PySide6.QtWidgets import (QApplication,
                              QVBoxLayout,
                              QHBoxLayout,
                              QPushButton,
-                             QDialog,
-                             QDialogButtonBox,
                              QPlainTextEdit,
                              QLabel,
                              QRadioButton,
@@ -186,7 +182,7 @@ class Add_Task_No_dialog(QWidget):
 
     
     def on_save(self):
-        prio = 'None'
+        prio = 'none'
         if self.p_high.isChecked():
             prio = 'high'
         if self.p_mid.isChecked():
