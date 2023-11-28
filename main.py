@@ -1,7 +1,7 @@
 from settings import *
 from custom_widgets import *
 from PySide6.QtGui import QFont, QFontDatabase, QIcon, QPainter
-from PySide6.QtCore import Qt, QSize
+from PySide6.QtCore import Qt, QSize, QPropertyAnimation, QPoint,QRect, QEasingCurve
 from PySide6.QtWidgets import (QApplication,
                              QMainWindow,
                              QWidget,
@@ -11,15 +11,16 @@ from PySide6.QtWidgets import (QApplication,
                              QPushButton
                              )
 from PySide6 import QtCharts
-from db_data_functions import fetch_data, get_task_status_count
+from db_data_functions import fetch_data, get_task_status_count, main
 from stat_widgets import *
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        main()
         self.piegraph = PieGraph([])
         self.priority_bar_chart = PriorityBarChart()
-        self.daily_streak_heatmap = HeatMap()
+
         self.font_init()
         self.ui_init()
 
@@ -48,15 +49,30 @@ class MainWindow(QMainWindow):
         self.statswidget_layout = QVBoxLayout()
         self.statswidget.setLayout(self.statswidget_layout)
         
-        
         self.addtask = QPushButton()
         self.addtask.setIcon(QIcon('./data/icons/plus.png'))
         self.addtask.setIconSize(QSize(50,50))
         self.addtask.setContentsMargins(0,0,0,0)
         self.addtask.clicked.connect(self.on_addtask_clicked)
-       
+
+        self.show_hide_stats = QRadioButton()
+        self.show_hide_stats.setStyleSheet(f"""QRadioButton::indicator {{
+                                           background: {primary};
+                                           border-radius: 2px;
+        }}
+                                            QRadioButton::indicator:checked {{
+                                            background: rgb{priority_mid};
+                                            }}
+""")
+        self.show_hide_stats.clicked.connect(self.animate_stat_hide_show)
+
         self.addtask.setFixedWidth(200)
-        self.taskwidget_layout.addWidget(self.addtask, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.buttons_container = QWidget()
+        self.buttons_container_layout = QHBoxLayout()
+        self.buttons_container_layout.addWidget(self.addtask, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.buttons_container_layout.addWidget(self.show_hide_stats, Qt.AlignmentFlag.AlignRight)
+        self.buttons_container.setLayout(self.buttons_container_layout)
+        self.taskwidget_layout.addWidget(self.buttons_container, alignment=Qt.AlignmentFlag.AlignCenter)
         self.taskwidget_layout.addStretch()
 
         data = fetch_data()
@@ -83,30 +99,28 @@ class MainWindow(QMainWindow):
         barchart_veiw.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.priority_bar_chart_widget_layout.addWidget(barchart_veiw)
 
-        self.daily_streak_heatmap = HeatMap()
-        self.statswidget_layout.addWidget(self.daily_streak_heatmap)
         self.statswidget_layout.addWidget(self.priority_bar_chart_widget)
         self.statswidget_layout.addWidget(self.pie_chart_widget)
 
-        task_scroll = QScrollArea()
-        task_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        task_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        task_scroll.setWidgetResizable(True)
-        task_scroll.setWidget(self.taskwidget)
+        self.task_scroll = QScrollArea()
+        self.task_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.task_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.task_scroll.setWidgetResizable(True)
+        self.task_scroll.setWidget(self.taskwidget)
         custom_scroll_task = Custom_Scroll_Bar()
-        task_scroll.setVerticalScrollBar(custom_scroll_task)
+        self.task_scroll.setVerticalScrollBar(custom_scroll_task)
 
-        stat_scroll = QScrollArea()
-        stat_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
-        stat_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        stat_scroll.setWidgetResizable(True)
-        stat_scroll.setWidget(self.statswidget)
+        self.stat_scroll = QScrollArea()
+        self.stat_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+        self.stat_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.stat_scroll.setWidgetResizable(True)
+        self.stat_scroll.setWidget(self.statswidget)
         custom_scroll_stat = Custom_Scroll_Bar()
-        stat_scroll.setVerticalScrollBar(custom_scroll_stat)
-        stat_scroll.setMaximumWidth((QApplication.primaryScreen().size().width())/2.5)
+        self.stat_scroll.setVerticalScrollBar(custom_scroll_stat)
+        self.stat_scroll.setMaximumWidth((QApplication.primaryScreen().size().width())/2.5)
         
-        self.central_layout.addWidget(task_scroll)
-        self.central_layout.addWidget(stat_scroll)
+        self.central_layout.addWidget(self.task_scroll)
+        self.central_layout.addWidget(self.stat_scroll)
         self.setCentralWidget(central_widget)
 
         self.setStyleSheet(f"""
@@ -132,7 +146,7 @@ class MainWindow(QMainWindow):
                                    background-color: {primary}
                                    }}
                                    """)
-        stat_scroll.setStyleSheet(f"""
+        self.stat_scroll.setStyleSheet(f"""
                              QScrollBar:vertical {{
                              background: {background};
                              width: 20px;
@@ -162,7 +176,7 @@ class MainWindow(QMainWindow):
                              background: {background};
                              }}
                             """)
-        task_scroll.setStyleSheet(f"""
+        self.task_scroll.setStyleSheet(f"""
                              QScrollBar:vertical {{
                              background: {background};
                              width: 20px;
@@ -192,8 +206,25 @@ class MainWindow(QMainWindow):
                              background: {background};
                              }}
                             """)
-        
+
         self.showMaximized()
+
+    def animate_stat_hide_show(self):
+        current_width = self.stat_scroll.width()
+        self.animation = QPropertyAnimation(self.stat_scroll, b"maximumWidth")
+        
+        if current_width == 0:
+            newwidth = QApplication.primaryScreen().size().width()/2.5
+            self.animation.setEasingCurve(QEasingCurve.Type.OutBack)
+        else:
+            newwidth = 0
+            self.animation.setEasingCurve(QEasingCurve.Type.InBack)
+
+        self.animation.setDuration(500)
+        self.animation.setStartValue(current_width)
+        self.animation.setEndValue(newwidth)
+        self.animation.start()
+
 
     def on_addtask_clicked(self):
         if not self.getting_task:

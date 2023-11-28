@@ -1,7 +1,7 @@
 from PySide6 import QtCharts
 from PySide6.QtGui import QColor, QBrush, qRgb
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QMainWindow, QApplication, QGraphicsSimpleTextItem
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QMainWindow, QApplication
 from functools import partial
 from settings import *
 from db_data_functions import get_priority_data_for_bar_chart, get_done_with_dates_for_heat_map
@@ -9,6 +9,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 import calmap, datetime, sys
 import pandas as pd
+from matplotlib.gridspec import GridSpec
 
 
 class PieGraph(QtCharts.QChart):
@@ -36,7 +37,7 @@ class PieGraph(QtCharts.QChart):
         for marker in legend.markers():
             if marker.series() == self.inner:
                 marker.setVisible(False)
-
+    
     def set_outer_series(self):
         slices = list()
         for data in self._data:
@@ -97,7 +98,7 @@ class PriorityBarChart(QtCharts.QChart):
         self.barchart.setBarWidth(1)
         self.addSeries(self.barchart)
         self.update()
-        
+    
     def create_bars(self):
         for idx ,item in enumerate(self.priority_data):
             value_index = [self.all_dates.index(item) for item in self.dates_done if item in self.all_dates]
@@ -135,8 +136,8 @@ class PriorityBarChart(QtCharts.QChart):
     
     def set_axis(self):
         x = self.axisX()
-        if x :
-            self.removeAxis(x)
+        
+        self.removeAxis(x)
 
         self.dates = []
         for item in self.all_dates:
@@ -159,41 +160,15 @@ class PriorityBarChart(QtCharts.QChart):
 class HeatMap(QWidget):
     def __init__(self):
         super().__init__()
-        self.setMinimumHeight(300)
-        fig, self.ax = plt.subplots(figsize=(4,3))
-        self.ax.set_title('Daily Streak HeatMap', color='white')
-        self.ax.tick_params(axis='x', labelcolor='white')
-        self.ax.tick_params(axis='y', labelcolor='white')
-        fig.patch.set_facecolor(background_hex)
-        self.canvas = FigureCanvas(fig)
+        self.setMinimumHeight(200)
+        self.fig = plt.figure(figsize=(5,6))
+        
+        self.fig.patch.set_facecolor(background_hex)
+        self.canvas = FigureCanvas(self.fig)
 
         layout = QVBoxLayout()
         layout.addWidget(self.canvas)
         self.setLayout(layout)
-        self.ax.set_facecolor(primary_hex)
-        self.get_heatmap()
-
-    def get_heatmap(self):
-        data_df = self.get_data()
-        self.ax.clear()
-
-        calmap.yearplot(data_df['Value'], ax=self.ax, cmap='OrRd_r', fillcolor=background_hex, linewidth=0.009, dayticks=False)
-        self.canvas.draw()
-
-    def get_data(self):
-        data = get_done_with_dates_for_heat_map()
-
-        data_df = pd.DataFrame(list(data.items()), columns=['Date', 'Value'])
-        data_df['Date'] = pd.to_datetime(data_df['Date'])
-        data_df.set_index('Date', inplace=True)
-
-        return data_df
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    window = QMainWindow()
-    widget = HeatMap()
-    window.setCentralWidget(widget)
-    window.show()
-    app.exec()
-
+        
+        
+        
