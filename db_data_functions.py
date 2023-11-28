@@ -161,7 +161,7 @@ def get_priority_data_for_bar_chart(LIMIT=20):
         SUM(CASE WHEN current_priority = 'high' AND current_status = 'done' THEN 1 ELSE 0 END),
         SUM(CASE WHEN current_priority = 'mid' AND current_status = 'done' THEN 1 ELSE 0 END),
         SUM(CASE WHEN current_priority = 'low' AND current_status = 'done' THEN 1 ELSE 0 END),
-        SUM(CASE WHEN current_priority = 'none' AND current_status = 'done' THEN 1 ELSE 0 END)
+        SUM(CASE WHEN current_priority = 'None' AND current_status = 'done' THEN 1 ELSE 0 END)
     FROM main
     INNER JOIN tasks USING(task_id)
     INNER JOIN priority USING(priority_id)
@@ -210,8 +210,9 @@ def get_done_with_dates_for_heat_map():
 """)
 
     data_dict = {}
+    dates = []
     for item in cursor.fetchall():
         date, value = item
-        data_dict[date] = value 
-    return data_dict
-
+        data_dict[date] = value
+        dates.append(date) 
+    return data_dict, dates
