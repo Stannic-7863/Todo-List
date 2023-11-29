@@ -93,7 +93,7 @@ class PriorityBarChart(QtCharts.QChart):
     def __init__(self):
         super().__init__()
         self.setMinimumHeight(500)
-        self.days = 18
+        self.days = 14
         self.barchart = QtCharts.QStackedBarSeries()
         self.barchart.setBarWidth(1)
         self.addSeries(self.barchart)
@@ -136,8 +136,8 @@ class PriorityBarChart(QtCharts.QChart):
     
     def set_axis(self):
         x = self.axisX()
-        
-        self.removeAxis(x)
+        if x:
+            self.removeAxis(x)
 
         self.dates = []
         for item in self.all_dates:
