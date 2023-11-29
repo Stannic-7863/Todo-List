@@ -127,7 +127,7 @@ class Add_Task:
     def delete_task(self, widget: QCheckBox):
         delete_task_db(self.task_id)
         widget.deleteLater()
-
+        self.update_graphs()
     
     def change_prio(self, prio):
         previous_prio = self.priority_str
@@ -139,7 +139,7 @@ class Add_Task:
 
         change_priority_db(previous_prio, self.priority_str, self.task_id)
         if not self.loading_data:    
-            self.parent.priority_bar_chart.update()
+            self.update_graphs()
 
     def get_color(self, prio):
         self.color = priority_none
@@ -170,10 +170,13 @@ class Add_Task:
             if not self.loading_data:
                 change_status_db(current, self.status, self.task_id, formatted_date)
 
-        if not self.loading_data:    
-            parent.priority_bar_chart.update()
-            new_data = parent.get_task_status_data()
-            parent.piegraph.update_data(new_data)
+        if not self.loading_data:  
+            self.update_graphs() 
+        
+    def update_graphs(self):
+        self.parent.priority_bar_chart.update()
+        new_data = self.parent.get_task_status_data()
+        self.parent.piegraph.update_data(new_data)
 
 def start_animation(checkbox, color_from, color_to):
     animation = QVariantAnimation(checkbox)

@@ -29,7 +29,6 @@ class TitleLable(QLabel):
     def leaveEvent(self, event):
         self.is_hovering = False
 
-
 class Custom_Scroll_Bar(QScrollBar):
     def __init__(self):
         super().__init__()

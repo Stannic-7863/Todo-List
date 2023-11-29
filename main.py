@@ -127,9 +127,6 @@ class MainWindow(QMainWindow):
         self.stat_scroll.setVerticalScrollBar(custom_scroll_stat)
         self.stat_scroll.setMaximumWidth((QApplication.primaryScreen().size().width())/2.5)
 
-        self.donetasks = QWidget()
-        self.donetasks_layout = QVBoxLayout()
-        self.donetasks.setLayout(self.donetasks_layout)
         
         self.nav_menu_bar_widget = QWidget()
         self.nav_menu_bar_widget.setMaximumWidth(0)
@@ -145,15 +142,23 @@ class MainWindow(QMainWindow):
         seperation_frame.setStyleSheet(f"background: white")
         seperation_frame.setFrameShadow(QFrame.Shadow.Sunken)
 
+        self.donetasks_widget = QWidget()
+        self.donetasks_widget_layout = QVBoxLayout()
+        self.donetasks_widget.setLayout(self.donetasks_widget_layout)
+
+        self.pomodoro_widget = QWidget()
+        self.pomodoro_widget_layout = QVBoxLayout()
+        self.pomodoro_widget.setLayout(self.pomodoro_widget_layout)
+
         self.nav_menu_bar_widget_layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignCenter)
         self.nav_menu_bar_widget_layout.addWidget(seperation_frame)
         self.nav_menu_bar_widget_layout.addStretch()
 
-      
         self.main_home_widget.layout().addWidget(self.task_scroll)
         self.main_home_widget.layout().addWidget(self.stat_scroll)
         self.central_layout.addWidget(self.nav_menu_bar_widget, Qt.AlignmentFlag.AlignTop)
         self.central_layout.addWidget(self.main_home_widget)
+        
         self.setCentralWidget(central_widget)
 
 

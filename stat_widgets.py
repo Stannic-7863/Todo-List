@@ -1,10 +1,10 @@
 from PySide6 import QtCharts
 from PySide6.QtGui import QColor, QBrush, qRgb
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QMainWindow, QApplication
+from PySide6.QtWidgets import QWidget, QVBoxLayout
 from functools import partial
 from settings import *
-from db_data_functions import get_priority_data_for_bar_chart, get_done_with_dates_for_heat_map
+from db_data_functions import get_priority_data_for_bar_chart
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 import calmap, datetime, sys
