@@ -169,6 +169,7 @@ class Add_Task:
             self.status = 'done'
             if not self.loading_data:
                 change_status_db(current, self.status, self.task_id, formatted_date)
+
         if not self.loading_data:    
             parent.priority_bar_chart.update()
             new_data = parent.get_task_status_data()

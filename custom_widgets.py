@@ -17,6 +17,18 @@ from PySide6.QtWidgets import (QApplication,
 import datetime
 from db_data_functions import commit_new_task_data
 
+class TitleLable(QLabel):
+    def __init__(self, text):
+        super().__init__()
+        self.setText(text)
+        self.is_hovering = False
+    
+    def enterEvent(self, event):
+        self.is_hovering = True
+
+    def leaveEvent(self, event):
+        self.is_hovering = False
+
 
 class Custom_Scroll_Bar(QScrollBar):
     def __init__(self):
