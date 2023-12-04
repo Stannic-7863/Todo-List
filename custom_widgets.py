@@ -17,11 +17,16 @@ from PySide6.QtWidgets import (QApplication,
 import datetime
 from db_data_functions import commit_new_task_data
 
-class TitleLable(QLabel):
-    def __init__(self, text):
+class ItemLable(QLabel):
+    instances = []
+    def __init__(self, text, central, assigned):
         super().__init__()
+        self.instances.append(self)
         self.setText(text)
         self.is_hovering = False
+        self.selected = False
+        self.central = central
+        self.assigned = assigned
     
     def enterEvent(self, event):
         self.is_hovering = True
@@ -29,9 +34,51 @@ class TitleLable(QLabel):
     def leaveEvent(self, event):
         self.is_hovering = False
 
+    def mousePressEvent(self, event):
+        if self.is_hovering:
+            self.switch_widget()
+
+    def switch_widget(self):
+        for instance in self.instances:
+                instance.selected = False
+        self.selected = True
+
+        self.central.setCurrentWidget(self.assigned)
+
 class Custom_Scroll_Bar(QScrollBar):
     def __init__(self):
         super().__init__()
+        self.setStyleSheet(f"""
+                             QScrollBar:vertical {{
+                             background: {background};
+                             width: 20px;
+                             border: 0px solid black;
+                             margin: 15px 10px 15px 0px
+                             }}
+
+                             QScrollBar::handle:vertical {{
+                             border: 0px solid black;
+                             border-radius : 5px;
+                             background-color : {primary}; 
+                             }}
+
+                             QScrollBar::sub-line:vertical {{
+                             background: {background};
+                             }}
+                             
+                             QScrollBar::add-line:vertical {{
+                             background: {background}; 
+                             }}
+
+                             QScrollBar::sub-page:vertical {{
+                             background: {background};
+                             }}
+
+                             QScrollBar::add-page:vertical {{
+                             background: {background};
+                             }}
+                            """)
+        
 
     def enterEvent(self, event):
         start_animation(self, qprimary, priority_mid)
@@ -87,48 +134,11 @@ class Add_Task_No_dialog(QWidget):
         priority_button_group.addButton(self.p_high)
         priority_button_group.addButton(self.p_mid)
         priority_button_group.addButton(self.p_low)
-        self.p_high.setStyleSheet(f"""QRadioButton
-                                {{
-                                    background-color: rgb{priority_high};
-                                    padding: 5px 10px 5px 0px;
-                                    text-align: center;
-                                    width: 60px;
-                                    height: 15px;
-                                }}
-                                QRadioButton:checked
-                                {{
-                                    border:2px solid white;
-                                }}
-                                """)
 
-        self.p_mid.setStyleSheet(f"""QRadioButton
-                                {{
-                                    background-color: rgb{priority_mid};
-                                    padding: 5px 10px 5px 0px;
-                                    text-align: center;
-                                    width: 60px;
-                                    height: 15px;
-                                }}
-                                QRadioButton:checked
-                                {{
-                                    border:2px solid white;
-                                }}
-                                """)
-
-        self.p_low.setStyleSheet(f"""QRadioButton
-                                {{
-                                    background-color: rgb{priority_low};
-                                    padding: 5px 10px 5px 0px;
-                                    text-align: center;
-                                    width: 60px;
-                                    height: 15px;
-                                }}
-                                QRadioButton:checked
-                                {{
-                                    border:2px solid white;
-                                }}
-                                """)
-
+        self.set_radio_style_sheet(self.p_high, priority_high)
+        self.set_radio_style_sheet(self.p_mid, priority_mid)
+        self.set_radio_style_sheet(self.p_low, priority_low)
+        
         self.save_button = QPushButton('Save')
         cancel_shortcut = QShortcut(QKeySequence('escape'), self)
         cancel_shortcut.activated.connect(self.on_cancel)
@@ -189,9 +199,6 @@ class Add_Task_No_dialog(QWidget):
 
         self.get_task_text.blockSignals(False)
 
-        
-
-    
     def on_save(self):
         prio = 'none'
         if self.p_high.isChecked():
@@ -205,7 +212,7 @@ class Add_Task_No_dialog(QWidget):
         current_datetime = datetime.datetime.now()
         formatted_date = current_datetime.strftime('%Y-%m-%d')
         task_id = commit_new_task_data(text, str(formatted_date), prio, 'not done', None)
-        add_task = Add_Task(self.parent, self.mainwindowlayout ,text, prio, 'not done', task_id, loading_data=False)
+        add_task = Add_Task(self.parent, self.mainwindowlayout ,text, prio, 'not done', task_id)
         add_task.add()
 
         self.parent.on_task_added()
@@ -216,6 +223,21 @@ class Add_Task_No_dialog(QWidget):
         self.parent.on_task_added()
         self.parent.placeholder_widget.deleteLater()
         self.deleteLater()
+
+    def set_radio_style_sheet(self, widget, color):
+        widget.setStyleSheet(f"""QRadioButton
+                                {{
+                                    background-color: rgb{color};
+                                    padding: 5px 10px 5px 0px;
+                                    text-align: center;
+                                    width: 60px;
+                                    height: 15px;
+                                }}
+                                QRadioButton:checked
+                                {{
+                                    border:2px solid white;
+                                }}
+                                """)
 
 def start_animation(widget, color_from, color_to):
     animation = QVariantAnimation(widget)
@@ -256,3 +278,4 @@ def change(widget, color):
                         background: {background};
                         }}
                     """)
+
