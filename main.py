@@ -10,28 +10,32 @@ from PySide6.QtWidgets import (QApplication,
                              QScrollArea,
                              QPushButton,
                              QFrame,
-                             QTabWidget
+                             QTabWidget,
+                             QStackedLayout
                              )
 from PySide6 import QtCharts
 from db_data_functions import fetch_data, get_task_status_count, main
 from stat_widgets import *
+from pomodoro import Pomodoro
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.font_init()
         main()
         self.piegraph = PieGraph([])
         self.priority_bar_chart = PriorityBarChart()
-
-        self.font_init()
         self.ui_init()
         self.setMouseTracking(True)
     def font_init(self):
+        
         path = './data/fonts/bfont.TTF'
 
         fontinfo = QFontDatabase.applicationFontFamilies(QFontDatabase.addApplicationFont(path))
         fontfamily = fontinfo[0] if fontinfo else 'Areil'
         self.setFont(QFont(fontfamily))
+        QApplication.setFont(QFont(fontfamily))
+
     def ui_init(self):
         self.is_tab_menu_open = False
         self.getting_task = False
@@ -45,8 +49,8 @@ class MainWindow(QMainWindow):
         central_widget.setLayout(self.central_layout)
         central_widget.setMouseTracking(True)
 
-        self.main_home_widget = QWidget()
-        self.main_home_widget.setLayout(QHBoxLayout())
+        self.home_widget = QWidget()
+        self.home_widget.setLayout(QHBoxLayout())
 
         self.taskwidget = QWidget()
         self.taskwidget_layout = QVBoxLayout()
@@ -82,13 +86,6 @@ class MainWindow(QMainWindow):
         self.taskwidget_layout.addWidget(self.buttons_container, alignment=Qt.AlignmentFlag.AlignCenter)
         self.taskwidget_layout.addStretch()
        
-
-        data = fetch_data()
-        for items in data:
-            task_name, prio, status, category, task_id = items
-            add_task = Add_Task(self, self.taskwidget_layout, task_name, prio, status, task_id, loading_data=True)
-            add_task.add()
-
         self.piegraph_widget = QWidget()
         self.piegraph_widget_layout = QVBoxLayout()
         self.piegraph_widget.setLayout(self.piegraph_widget_layout)
@@ -127,13 +124,17 @@ class MainWindow(QMainWindow):
         self.stat_scroll.setVerticalScrollBar(custom_scroll_stat)
         self.stat_scroll.setMaximumWidth((QApplication.primaryScreen().size().width())/2.5)
 
+        self.stacked_display = QWidget()
+        self.stacked_display_layout = QStackedLayout()
+        self.stacked_display.setLayout(self.stacked_display_layout)
         
         self.nav_menu_bar_widget = QWidget()
         self.nav_menu_bar_widget.setMaximumWidth(0)
         self.nav_menu_bar_widget_layout = QVBoxLayout()
         self.nav_menu_bar_widget.raise_()
         self.nav_menu_bar_widget.setLayout(self.nav_menu_bar_widget_layout)
-        title_label = TitleLable('YARIKATA')
+        self.nav_menu_bar_widget.setStyleSheet(f"background-color: {background_dark}; border-radius: 7px")
+        title_label = ItemLable('YARIKATA', self.stacked_display_layout, self.home_widget)
         title_label.setStyleSheet(f"""
                                   font-size: 30px;
                                 """)
@@ -142,26 +143,54 @@ class MainWindow(QMainWindow):
         seperation_frame.setStyleSheet(f"background: white")
         seperation_frame.setFrameShadow(QFrame.Shadow.Sunken)
 
-        self.donetasks_widget = QWidget()
-        self.donetasks_widget_layout = QVBoxLayout()
-        self.donetasks_widget.setLayout(self.donetasks_widget_layout)
 
-        self.pomodoro_widget = QWidget()
-        self.pomodoro_widget_layout = QVBoxLayout()
-        self.pomodoro_widget.setLayout(self.pomodoro_widget_layout)
+        self.done_tasks_widget = QWidget()
+        done_label = QLabel('Completed Tasks')
+        done_label.setStyleSheet(f'font-size: 30px; padding: 20px 0px 20px 0px')
+        done_frame = QFrame()
+        done_frame.setFrameShape(QFrame.Shape.HLine)
+        done_frame.setStyleSheet(f'background: white')
+        self.done_tasks_widget_layout = QVBoxLayout()
+        self.done_tasks_widget_layout.addWidget(done_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.done_tasks_widget_layout.addWidget(done_frame)
+        self.done_tasks_widget_layout.addStretch()
+        self.done_tasks_widget.setLayout(self.done_tasks_widget_layout)
+
+        donetask_scroll = QScrollArea()
+        donetask_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        donetask_scroll.setWidgetResizable(True)
+        donetask_scroll.setWidget(self.done_tasks_widget)
+        custom_done_scroll = Custom_Scroll_Bar()
+        donetask_scroll.setVerticalScrollBar(custom_done_scroll)
+
+        self.pomodoro_widget = Pomodoro(self)
+          
+        home_tab_label = ItemLable('Home', self.stacked_display_layout, self.home_widget)
+        tasks_done_tab_label = ItemLable('Task Done', self.stacked_display_layout, donetask_scroll)
+        pomodoro_tab_label = ItemLable('Pomodoro', self.stacked_display_layout, self.pomodoro_widget)
+
+        self.set_tab_style_sheet(home_tab_label)
+        self.set_tab_style_sheet(tasks_done_tab_label)
+        self.set_tab_style_sheet(pomodoro_tab_label)
 
         self.nav_menu_bar_widget_layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignCenter)
         self.nav_menu_bar_widget_layout.addWidget(seperation_frame)
+        self.nav_menu_bar_widget_layout.addWidget(home_tab_label)
+        self.nav_menu_bar_widget_layout.addWidget(tasks_done_tab_label)
+        self.nav_menu_bar_widget_layout.addWidget(pomodoro_tab_label)
         self.nav_menu_bar_widget_layout.addStretch()
 
-        self.main_home_widget.layout().addWidget(self.task_scroll)
-        self.main_home_widget.layout().addWidget(self.stat_scroll)
+        self.stacked_display_layout.addWidget(self.home_widget)
+        self.stacked_display_layout.addWidget(donetask_scroll)
+        self.stacked_display_layout.addWidget(self.pomodoro_widget)
+        self.stacked_display_layout.setCurrentWidget(self.home_widget) 
+
+        self.home_widget.layout().addWidget(self.task_scroll)
+        self.home_widget.layout().addWidget(self.stat_scroll)
         self.central_layout.addWidget(self.nav_menu_bar_widget, Qt.AlignmentFlag.AlignTop)
-        self.central_layout.addWidget(self.main_home_widget)
+        self.central_layout.addWidget(self.stacked_display)
         
         self.setCentralWidget(central_widget)
-
-
         self.setStyleSheet(f"""
                            QWidget {{
                            background-color: {background}; 
@@ -184,68 +213,25 @@ class MainWindow(QMainWindow):
                                    background-color: {primary}
                                    }}
                                    """)
-        self.stat_scroll.setStyleSheet(f"""
-                             QScrollBar:vertical {{
-                             background: {background};
-                             width: 20px;
-                             border: 0px solid black;
-                             margin: 15px 10px 15px 0px
-                             }}
-
-                             QScrollBar::handle:vertical {{
-                             border: 0px solid black;
-                             border-radius : 5px;
-                             background-color : {primary}; 
-                             }}
-
-                             QScrollBar::sub-line:vertical {{
-                             background: {background};
-                             }}
-                             
-                             QScrollBar::add-line:vertical {{
-                             background: {background}; 
-                             }}
-
-                             QScrollBar::sub-page:vertical {{
-                             background: {background};
-                             }}
-
-                             QScrollBar::add-page:vertical {{
-                             background: {background};
-                             }}
-                            """)
-        self.task_scroll.setStyleSheet(f"""
-                             QScrollBar:vertical {{
-                             background: {background};
-                             width: 20px;
-                             border: 0px solid black;
-                             margin: 15px 10px 15px 0px
-                             }}
-
-                             QScrollBar::handle:vertical {{
-                             border: 0px solid black;
-                             border-radius : 5px;
-                             background-color : {primary}; 
-                             }}
-
-                             QScrollBar::sub-line:vertical {{
-                             background: {background};
-                             }}
-                             
-                             QScrollBar::add-line:vertical {{
-                             background: {background}; 
-                             }}
-
-                             QScrollBar::sub-page:vertical {{
-                             background: {background};
-                             }}
-
-                             QScrollBar::add-page:vertical {{
-                             background: {background};
-                             }}
-                            """)
+        
+        data = fetch_data()
+        for items in data:
+            task_name, prio, status, category, task_id = items
+            add_task = Add_Task(self, self.taskwidget_layout, task_name, prio, status, task_id, loading_data=True)
+            add_task.add()
 
         self.showMaximized()
+
+    def set_tab_style_sheet(self, widget):
+        widget.setStyleSheet(f"""QLabel {{
+                             font-size: 15px;
+                             border-radius: 3px;
+                             padding: 5px 2px 5px 2px;
+                             }}
+                             QLabel::hover {{
+                             background-color : {accent_dark}
+                             }}
+                             """)
     
     def on_addtask_clicked(self):
         if not self.getting_task:
@@ -290,7 +276,7 @@ class MainWindow(QMainWindow):
             newwidth = 0
             self.animation.setEasingCurve(QEasingCurve.Type.InCubic)
 
-        self.animation.setDuration(800)
+        self.animation.setDuration(400)
         self.animation.setStartValue(current_width)
         self.animation.setEndValue(newwidth)
         self.statswidget_layout.removeWidget(self.priority_bar_chart_widget)
@@ -311,7 +297,7 @@ class MainWindow(QMainWindow):
             self.animation.setEasingCurve(QEasingCurve.Type.InBack)
             newwidth = 0
 
-        self.animation.setDuration(800)
+        self.animation.setDuration(400)
         self.animation.setStartValue(current_width)
         self.animation.setEndValue(newwidth)
         self.animation.start()
