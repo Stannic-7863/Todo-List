@@ -292,7 +292,6 @@ class MainWindow(QMainWindow):
         if self.is_tab_menu_open == True:
             newwidth = 300
             self.animation.setEasingCurve(QEasingCurve.Type.OutBack)
-
         else:
             self.animation.setEasingCurve(QEasingCurve.Type.InBack)
             newwidth = 0
