@@ -21,6 +21,7 @@ class custom_checkbox(QCheckBox):
         text_label = QLabel()
         text_label.setText(text)
         text_label.setWordWrap(True)
+        text_label.setStyleSheet(f"font-size: 18px")
         
         layout.addWidget(text_label)
         layout.addWidget(option_menu, alignment= Qt.AlignmentFlag.AlignRight)
@@ -30,6 +31,7 @@ class custom_checkbox(QCheckBox):
         self.get_width = self.width()
         self.get_height = self.height()
         self.increment = 10
+    
     def enterEvent(self, event):
         self.mouse_inside = True
     def leaveEvent(self, event):
@@ -70,14 +72,16 @@ class Add_Task:
     def create_task_check_box(self):
         self.options = self.create_task_options()
         self.check_box = custom_checkbox(self.text, self.options)
-        self.mainwindowlayout.insertWidget(1, self.check_box, alignment=Qt.AlignmentFlag.AlignTop)
-        self.check_box.stateChanged.connect(lambda value: self.on_state_changed(value, self.color, self.parent))
         change_color(self.check_box, f"rgb{str(self.color)}")
+        self.check_box.stateChanged.connect(lambda value: self.on_state_changed(value, self.color, self.parent))
 
         if self.status == 'done':
             self.check_box.setChecked(True)
+            self.parent.done_tasks_widget_layout.insertWidget(2, self.check_box) 
         if self.status == 'not done':
-            self.check_box.setChecked(False)
+            self.check_box.setChecked(False) 
+            self.mainwindowlayout.insertWidget(1, self.check_box, alignment=Qt.AlignmentFlag.AlignTop)
+
     
     def create_task_options(self):
         self.options = QToolButton()
@@ -89,7 +93,6 @@ class Add_Task:
                                     QToolButton {{
                                     background-color : transparent;
                                     }}
-
                                     QToolButton::menu-indicator {{
                                     image: none;
                                     }}
@@ -162,11 +165,16 @@ class Add_Task:
         if state == Qt.CheckState.Unchecked:
             start_animation(self.check_box, task_done, color)
             self.status = 'not done'
+            self.parent.done_tasks_widget_layout.removeWidget(self.check_box)
+            self.mainwindowlayout.insertWidget(1, self.check_box)
             if not self.loading_data: 
                 change_status_db(current, self.status, self.task_id, formatted_date) 
+        
         if state == Qt.CheckState.Checked:
             start_animation(self.check_box, color, task_done)
             self.status = 'done'
+            self.mainwindowlayout.removeWidget(self.check_box)
+            self.parent.done_tasks_widget_layout.insertWidget(2, self.check_box)
             if not self.loading_data:
                 change_status_db(current, self.status, self.task_id, formatted_date)
 
