@@ -70,7 +70,6 @@ class PieGraph(QtCharts.QChart):
             self.inner.setPieEndAngle(360)
             slice_.setLabel(name)
 
-
         slice_.setExplodeDistanceFactor(0.1)
         slice_.setExploded(is_hovered)
 
@@ -113,7 +112,7 @@ class PriorityBarChart(QtCharts.QChart):
             barset.setColor(QColor(qRgb(item['color'][0],item['color'][1],item['color'][2])))
             barset.hovered.connect(partial(self.show_info_on_hover, item['label'], bar_lst, self.all_dates))
         
-        self.addSeries(self.barchart)
+  
         self.setTitle(f"Tasks done in the previous {self.limit} days")
         self.setAnimationOptions(QtCharts.QChart.AnimationOption.SeriesAnimations)
         self.legend().setVisible(True)
@@ -125,15 +124,15 @@ class PriorityBarChart(QtCharts.QChart):
     
     def update(self):
         self.get_variables()
-        self.set_axis()
         self.create_bars()
+        self.set_axis()
 
     def get_variables(self):
         self.priority_data, self.dates_done, self.all_dates, self.limit = get_priority_data_for_bar_chart(self.days)
         self.removeSeries(self.barchart)
         self.barchart = QtCharts.QStackedBarSeries()
-        self.barchart.setBarWidth(1)
-    
+        self.barchart.setBarWidth(0.8)
+
     def set_axis(self):
         x = self.axisX()
         if x:
@@ -147,9 +146,17 @@ class PriorityBarChart(QtCharts.QChart):
         self.date_axis = QtCharts.QBarCategoryAxis()
         self.date_axis.append(self.dates)
         self.date_axis.setLabelsColor(QColor(qRgb(255,255,255)))
+        self.y_axis = QtCharts.QValueAxis()
+        self.y_axis.setLabelsColor(QColor(qRgb(255,255,255)))
+        max_val = sum([max(item['values']) for item in self.priority_data])+3
+        self.y_axis.setRange(0 ,max_val)
+        self.y_axis.setLabelFormat("%0.0f") 
         self.setAxisX(self.date_axis)
+        self.setAxisY(self.y_axis)
         self.barchart.attachAxis(self.date_axis)
-        self.removeSeries(self.barchart)
+        self.barchart.attachAxis(self.y_axis)
+        self.axisX().setGridLineVisible(False)
+        self.axisY().setGridLineVisible(False)
 
     def show_info_on_hover(self, label, value, all_dates, status, barindex):
         if status:
