@@ -1,13 +1,7 @@
 import datetime
-from PySide6.QtGui import QIcon, QAction, QActionGroup,  QColor, qRgb, QFont, QFontDatabase
-from PySide6.QtCore import Qt, QSize, QVariantAnimation, QAbstractAnimation
-from PySide6.QtWidgets import (QCheckBox,
-                             QHBoxLayout,
-                             QToolButton,
-                             QMenu,
-                             QLabel,
-                             QApplication
-                             )
+from PySide6.QtGui import *
+from PySide6.QtCore import *
+from PySide6.QtWidgets import *
 from settings import *
 from db_data_functions import change_priority_db, change_status_db, delete_task_db
 import datetime
@@ -18,24 +12,29 @@ class custom_checkbox(QCheckBox):
 
         layout = QHBoxLayout()
 
-        text_label = QLabel()
-        text_label.setText(text)
-        text_label.setWordWrap(True)
-        text_label.setStyleSheet(f"font-size: 18px")
+        self.text_label = QLabel()
+        self.text_label.setText(text)
+        self.text_label.setWordWrap(True)
+        self.text_label.setStyleSheet(f"font-size: 18px")
         
-        layout.addWidget(text_label)
+        layout.addWidget(self.text_label)
         layout.addWidget(option_menu, alignment= Qt.AlignmentFlag.AlignRight)
 
         self.setLayout(layout)
         self.mouse_inside = False
-        self.get_width = self.width()
-        self.get_height = self.height()
         self.increment = 10
     
     def enterEvent(self, event):
         self.mouse_inside = True
+        self.update_size()
     def leaveEvent(self, event):
         self.mouse_inside = True
+        self.update_size()
+
+    def update_size(self):
+        self.get_width = self.width()
+        self.get_height = self.height()
+
     def mousePressEvent(self, event):
         if self.mouse_inside:
             self.setChecked(not self.isChecked())

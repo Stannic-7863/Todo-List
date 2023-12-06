@@ -1,3 +1,5 @@
+import PySide6.QtCore
+import PySide6.QtGui
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
@@ -11,7 +13,6 @@ class Pomodoro(QWidget):
 
         self.start_icon = QIcon('./data/icons/start.png')
         self.pause_icon = QIcon('./data/icons/pause.png')
-
         #settings
         self.total_minutes = 25
         self.elapsed_seconds =  0 
@@ -24,6 +25,7 @@ class Pomodoro(QWidget):
         self.timer.setInterval(1000)
         self.timer.timeout.connect(self.update_clock_values)
         
+        # Make and add the widgets
         self.container_widget = QWidget()
         self.container_widget_layout = QVBoxLayout()
         self.container_widget.setLayout(self.container_widget_layout)
@@ -32,28 +34,25 @@ class Pomodoro(QWidget):
         self.header_widget_layout = QHBoxLayout()
         self.header_widget.setLayout(self.header_widget_layout)
 
-        self.options_button = QPushButton()
-        self.options_button.setIcon(QIcon('./data/icons/menu.png'))
-        self.options_button.setIconSize(QSize(50, 50))
-
         self.add_task_button = QPushButton()
         self.add_task_button.setIcon(QIcon('./data/icons/plus.png'))
         self.add_task_button.setIconSize(QSize(50,50))
 
-        self.get_task_name = QLineEdit()
+        self.get_task_name = Custom_QLineEdit(self)
         self.get_task_name.setMaximumWidth(0)
+        self.get_task_name.clearFocus()
+        self.get_task_name.setPlaceholderText('What are you working on today?')
         self.get_task_name.setStyleSheet(f"""QLineEdit {{
                                          padding: 8px 8px 8px 8px;
                                          border: none;
                                          border-bottom: 1px solid white;
                                          font-size: 20px;
-                                         }}""")  
-
-        self.header_widget_layout.addWidget(self.options_button, alignment=Qt.AlignmentFlag.AlignLeft)
+                                         }}
+                                         """)  
+        
         self.header_widget_layout.addStretch()
         self.header_widget_layout.addWidget(self.get_task_name, alignment=Qt.AlignmentFlag.AlignCenter)
         self.header_widget_layout.addWidget(self.add_task_button, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.header_widget_layout.addSpacing(60)
         self.header_widget_layout.addStretch()
 
         self.body_widget = QWidget()
@@ -61,8 +60,11 @@ class Pomodoro(QWidget):
         self.body_widget.setLayout(self.body_widget_layout)
         
         self.clock_widget = CircularProgressBar()
+        self.clock_widget.total_rounds = self.total_rounds
 
+        self.body_widget_layout.addStretch()
         self.body_widget_layout.addWidget(self.clock_widget, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.body_widget_layout.addStretch()
 
         self.start_pause_button = QPushButton()
         self.start_pause_button.setIcon(self.start_icon)
@@ -78,7 +80,6 @@ class Pomodoro(QWidget):
         self.container_widget_layout.addWidget(self.body_widget)
         self.container_widget_layout.addWidget(self.footer_widget, alignment=Qt.AlignmentFlag.AlignJustify)
 
-        self.set_button_style_sheet(self.options_button)
         self.set_button_style_sheet(self.add_task_button)
         self.set_button_style_sheet(self.start_pause_button)
 
@@ -89,23 +90,46 @@ class Pomodoro(QWidget):
         self.main_layout.addWidget(self.container_widget)
         self.setLayout(self.main_layout)
 
+    def set_task(self):
+        text = self.get_task_name.text()
+        task_label = Custom_QLabel()
+        task_label.setText(text)
+        self.animate_get_task()
+        self.body_widget_layout.insertWidget(0, task_label, alignment=Qt.AlignmentFlag.AlignHCenter)
+
     def on_add_task_button_clicked(self):
         self.animate_add_task_button()
     
     def animate_add_task_button(self):
-        self.animation_task_button = QPropertyAnimation(self.add_task_button, b'maximumWidth')
-        self.animation_task_button.setStartValue(self.add_task_button.width())
-        self.animation_task_button.setEndValue(0)
+        if self.add_task_button.width() > 0:
+            self.animation_task_button = QPropertyAnimation(self.add_task_button, b'maximumWidth')
+            self.animation_task_button.setStartValue(self.add_task_button.width())
+            self.animation_task_button.setEndValue(0)
+        else:
+            self.animation_task_button = QPropertyAnimation(self.add_task_button, b'maximumWidth')
+            self.animation_task_button.setStartValue(self.add_task_button.width())
+            self.animation_task_button.setEndValue(50)
+            
+            
         self.animation_task_button.setEasingCurve(QEasingCurve.Type.InCubic)
         self.animation_task_button.finished.connect(self.animate_get_task)
         self.animation_task_button.start()
 
 
     def animate_get_task(self):
-        self.animation_get_task = QPropertyAnimation(self.get_task_name, b'minimumWidth')
-        self.animation_get_task.setStartValue(self.get_task_name.width())
-        self.animation_get_task.setEndValue(400)
-        self.animation_get_task.setEasingCurve(QEasingCurve.Type.OutBack)
+        if self.get_task_name.width() == 0:
+            self.animation_get_task = QPropertyAnimation(self.get_task_name, b'minimumWidth')
+            self.animation_get_task.setStartValue(self.get_task_name.width())
+            self.animation_get_task.setEndValue(400)
+            self.animation_get_task.setEasingCurve(QEasingCurve.Type.OutBack)
+            self.get_task_name.setFocus()
+        
+        else:
+            self.animation_get_task = QPropertyAnimation(self.get_task_name, b'minimumWidth')
+            self.animation_get_task.setStartValue(self.get_task_name.width())
+            self.animation_get_task.setEndValue(0)
+            self.animation_get_task.setEasingCurve(QEasingCurve.Type.InBack)
+            self.get_task_name.clearFocus()
         self.animation_get_task.setDuration(500)
         self.animation_get_task.start()
 
@@ -146,8 +170,8 @@ class CircularProgressBar(QWidget):
         self.elapsed_seconds = 0
         self.hour = '00'
         self.time = '00:00'
-        self.width = 300
-        self.height = 300
+        self.width = 350
+        self.height = 350
         self.progress_width = 10
         self.progress_rounded_cap = True
         self.progress_color = priority_mid
@@ -155,7 +179,7 @@ class CircularProgressBar(QWidget):
         self.font_size = 30
         self.font_size_small = 16
         self.enable_shadow = True
-        self.total_rounds = 4
+        self.total_rounds = 0
         self.current_rounds = 0
         self.quote = 'Focus'
 
@@ -195,13 +219,13 @@ class CircularProgressBar(QWidget):
         paint.drawRect(rect)
 
         pen = QPen()
-        pen.setColor(QColor(qRgb(255,255,255)))
+        pen.setColor(QColor(255,255,255,100))
         pen.setWidth(2)
         paint.setPen(pen)
         paint.drawArc(margin, margin, width, height, 0, 360*16)
         
-        pen.setColor(QColor(qRgb(self.progress_color[0], self.progress_color[1], self.progress_color[2])))
-        pen.setWidth(self.progress_width)
+        pen.setColor(QColor(255,255,255,255))
+        pen.setWidth(self.progress_width/2)
         
         if self.progress_rounded_cap:
             pen.setCapStyle(Qt.PenCapStyle.RoundCap)
@@ -237,3 +261,25 @@ class CircularProgressBar(QWidget):
         paint.drawText(quote_rect, Qt.AlignmentFlag.AlignCenter, f"{self.quote}")
         
         paint.end() 
+
+
+class Custom_QLineEdit(QLineEdit):
+    def __init__(self, parent):
+        super().__init__()
+        self.parent = parent
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        if event.key() == Qt.Key_Escape:
+            self.parent.animate_add_task_button()
+        if event.key() == Qt.Key_Return:
+            self.parent.set_task()
+
+        super().keyPressEvent(event)
+
+class Custom_QLabel(QLabel):
+    def __init__(self):
+        super().__init__()
+        self.setStyleSheet(f"""QLabel {{
+                           font-size: 30px;
+                           font-weight: 50;              
+        }}""")

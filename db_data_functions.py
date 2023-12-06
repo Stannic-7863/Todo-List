@@ -36,6 +36,15 @@ def main():
                 category TEXT
         )
     """)
+    
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS pomodoro (
+                pomodoro_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT, 
+                rounds INTEGER,
+                focus_time
+        )
+    """)
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS main (
@@ -43,6 +52,7 @@ def main():
                 priority_id INTEGER NOT NULL,
                 status_id INTEGER NOT NULL,
                 category_id INTEGER NOT NULL,
+                pomodoro_id INTEGER NOT NULL,
 
                 FOREIGN KEY (task_id) REFERENCES tasks(task_id),
                 FOREIGN KEY (priority_id) REFERENCES priority(priority_id),
@@ -50,6 +60,7 @@ def main():
                 FOREIGN KEY (category_id) REFERENCES category(category_id)
     )   
     """)
+
 
     connection.commit()
 
