@@ -3,17 +3,18 @@ from Add_Task import Add_Task
 from PySide6.QtGui import QFont, QFontDatabase, QColor, qRgb, QShortcut, QKeySequence
 from PySide6.QtCore import Qt, QSize, QVariantAnimation, QAbstractAnimation
 from PySide6.QtWidgets import (QApplication,
-                             QWidget,
-                             QVBoxLayout,
-                             QHBoxLayout,
-                             QPushButton,
-                             QPlainTextEdit,
-                             QLabel,
-                             QRadioButton,
-                             QButtonGroup,
-                             QScrollBar,
-                             QSizePolicy
-                             )
+                            QWidget,
+                            QVBoxLayout,
+                            QHBoxLayout,
+                            QPushButton,
+                            QPlainTextEdit,
+                            QLabel,
+                            QRadioButton,
+                            QButtonGroup,
+                            QScrollBar,
+                            QSizePolicy
+                            )
+
 import datetime
 from db_data_functions import commit_new_task_data
 
@@ -49,35 +50,35 @@ class Custom_Scroll_Bar(QScrollBar):
     def __init__(self):
         super().__init__()
         self.setStyleSheet(f"""
-                             QScrollBar:vertical {{
-                             background: {background};
-                             width: 20px;
-                             border: 0px solid black;
-                             margin: 15px 10px 15px 0px
-                             }}
+                            QScrollBar:vertical {{
+                            background: {background};
+                            width: 20px;
+                            border: 0px solid black;
+                            margin: 15px 10px 15px 0px
+                            }}
 
-                             QScrollBar::handle:vertical {{
-                             border: 0px solid black;
-                             border-radius : 5px;
-                             background-color : {primary}; 
-                             }}
+                            QScrollBar::handle:vertical {{
+                            border: 0px solid black;
+                            border-radius : 5px;
+                            background-color : {primary}; 
+                            }}
 
-                             QScrollBar::sub-line:vertical {{
-                             background: {background};
-                             }}
-                             
-                             QScrollBar::add-line:vertical {{
-                             background: {background}; 
-                             }}
+                            QScrollBar::sub-line:vertical {{
+                            background: {background};
+                            }}
+                            
+                            QScrollBar::add-line:vertical {{
+                            background: {background}; 
+                            }}
 
-                             QScrollBar::sub-page:vertical {{
-                             background: {background};
-                             }}
+                            QScrollBar::sub-page:vertical {{
+                            background: {background};
+                            }}
 
-                             QScrollBar::add-page:vertical {{
-                             background: {background};
-                             }}
-                            """)
+                            QScrollBar::add-page:vertical {{
+                            background: {background};
+                            }}
+                        """)
         
 
     def enterEvent(self, event):
@@ -100,10 +101,7 @@ class Add_Task_No_dialog(QWidget):
         fontinfo = QFontDatabase.applicationFontFamilies(QFontDatabase.addApplicationFont(path))
         fontfamily = fontinfo[0] if fontinfo else 'Areil'
         QApplication.setFont(QFont(fontfamily))
-
-        self.ui_init()
-
-    def ui_init(self):
+        
         self.get_task_text_widget_layout = QVBoxLayout()
         self.get_task_text_widget = QWidget()
         self.get_task_text_widget.setLayout(self.get_task_text_widget_layout)
@@ -111,7 +109,6 @@ class Add_Task_No_dialog(QWidget):
         self.get_task_text_widget_layout.addWidget(self.get_task_text)
         self.get_task_text.setStyleSheet("max-height: 70")
         self.get_task_text.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-   
         self.get_task_text.textChanged.connect(self.word_limit)
         self.get_task_text.setPlaceholderText('Enter Task Name and description')
 
@@ -120,7 +117,7 @@ class Add_Task_No_dialog(QWidget):
         self.current_word_count_label.setStyleSheet(f"""QLabel {{
                             color : {background};
                             font-weight: bold;}}
-                           """)
+                        """)
 
         priority_button_container = QWidget()
         priority_button_container_layout = QHBoxLayout()
@@ -161,18 +158,18 @@ class Add_Task_No_dialog(QWidget):
         
 
         self.setStyleSheet(f"""
-                           QWidget {{border-radius: 5px}}
-                           QPlainTextEdit {{
-                           background: {background};
-                           border-radius: 5px
-                           }}
-                           QPushButton {{
-                           background: {background};
-                           border-radius: 5px;
-                           }}
-                           QRadioButton::indicator {{
-                           image : none;
-                           }}""")
+                        QWidget {{border-radius: 5px}}
+                        QPlainTextEdit {{
+                        background: {background};
+                        border-radius: 5px
+                        }}
+                        QPushButton {{
+                        background: {background};
+                        border-radius: 5px;
+                        }}
+                        QRadioButton::indicator {{
+                        image : none;
+                        }}""")
 
     def word_limit(self):
         self.get_task_text.blockSignals(True)
@@ -213,7 +210,6 @@ class Add_Task_No_dialog(QWidget):
         formatted_date = current_datetime.strftime('%Y-%m-%d')
         task_id = commit_new_task_data(text, str(formatted_date), prio, 'not done', None)
         add_task = Add_Task(self.parent, self.mainwindowlayout ,text, prio, 'not done', task_id)
-        add_task.add()
 
         self.parent.on_task_added()
         self.parent.placeholder_widget.deleteLater()

@@ -136,7 +136,7 @@ class MainWindow(QMainWindow):
         self.nav_menu_bar_widget.setStyleSheet(f"background-color: {background_dark}; border-radius: 7px")
         title_label = ItemLable('YARIKATA', self.stacked_display_layout, self.home_widget)
         title_label.setStyleSheet(f"""
-                                  font-size: 30px;
+                                font-size: 30px;
                                 """)
         seperation_frame = QFrame()
         seperation_frame.setFrameShape(QFrame.Shape.HLine)
@@ -164,7 +164,6 @@ class MainWindow(QMainWindow):
         donetask_scroll.setVerticalScrollBar(custom_done_scroll)
 
         self.pomodoro_widget = Pomodoro(self)
-          
         home_tab_label = ItemLable('Home', self.stacked_display_layout, self.home_widget)
         tasks_done_tab_label = ItemLable('Task Done', self.stacked_display_layout, donetask_scroll)
         pomodoro_tab_label = ItemLable('Pomodoro', self.stacked_display_layout, self.pomodoro_widget)
@@ -192,46 +191,45 @@ class MainWindow(QMainWindow):
         
         self.setCentralWidget(central_widget)
         self.setStyleSheet(f"""
-                           QWidget {{
-                           background-color: {background}; 
-                           color: white;
-                           }}
-                           """)
+                        QWidget {{
+                        background-color: {background}; 
+                        color: white;
+                        }}
+                        """)
         self.statswidget.setStyleSheet(f"""
-                                       QWidget {{
-                                       border-radius : 5px;
-                                       }}
-                                       """)
+                                    QWidget {{
+                                    border-radius : 5px;
+                                    }}
+                                    """)
         self.addtask.setStyleSheet(f"""QPushButton {{
-                                   color: white;
-                                   background-color: none;
-                                   padding: 10px;
-                                   border: 2px solid white;
-                                   border-radius: 12px;
-                                   }}
-                                   QPushButton:hover {{
-                                   background-color: {primary}
-                                   }}
-                                   """)
+                                color: white;
+                                background-color: none;
+                                padding: 10px;
+                                border: 2px solid white;
+                                border-radius: 12px;
+                                }}
+                                QPushButton:hover {{
+                                background-color: {primary}
+                                }}
+                                """)
         
         data = fetch_data()
         for items in data:
             task_name, prio, status, category, task_id = items
             add_task = Add_Task(self, self.taskwidget_layout, task_name, prio, status, task_id, loading_data=True)
-            add_task.add()
 
         self.showMaximized()
 
     def set_tab_style_sheet(self, widget):
         widget.setStyleSheet(f"""QLabel {{
-                             font-size: 15px;
-                             border-radius: 3px;
-                             padding: 5px 2px 5px 2px;
-                             }}
-                             QLabel::hover {{
-                             background-color : {accent_dark}
-                             }}
-                             """)
+                            font-size: 15px;
+                            border-radius: 3px;
+                            padding: 5px 2px 5px 2px;
+                            }}
+                            QLabel::hover {{
+                            background-color : {accent_dark}
+                            }}
+                            """)
     
     def on_addtask_clicked(self):
         if not self.getting_task:
@@ -253,7 +251,7 @@ class MainWindow(QMainWindow):
         data = [undone_task, done_task]
 
         return data
- 
+    
     def on_task_added(self):
         self.getting_task = False
         data = self.get_task_status_data()

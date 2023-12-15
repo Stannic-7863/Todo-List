@@ -5,6 +5,14 @@ from datetime import datetime, timedelta
 data_base_path = './data/task_data/task_database.db'
 connection = sqlite3.connect(data_base_path)
 cursor = connection.cursor()
+current_version = 102
+
+
+def get_version():
+    cursor.execute("PRAGMA user_version;")
+    return cursor.fetchone()[0]
+def update_version():
+    cursor.execute(f"PRAGMA user_version = {current_version};")
 
 def main():
     cursor.execute(""" 
@@ -40,12 +48,11 @@ def main():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS pomodoro (
                 pomodoro_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT, 
-                rounds INTEGER,
-                focus_time
+                current_round INTEGER,
+                total_time
         )
     """)
-
+    
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS main (
                 task_id INTEGER PRIMARY KEY,
@@ -57,13 +64,12 @@ def main():
                 FOREIGN KEY (task_id) REFERENCES tasks(task_id),
                 FOREIGN KEY (priority_id) REFERENCES priority(priority_id),
                 FOREIGN KEY (status_id) REFERENCES status(status_id),
-                FOREIGN KEY (category_id) REFERENCES category(category_id)
+                FOREIGN KEY (category_id) REFERENCES category(category_id),
+                FOREIGN KEY (pomodoro_id) REFERENCES pomodoro(pomodoro_id)
     )   
     """)
 
-
     connection.commit()
-
 
 def commit_new_task_data(task_name, time_created, current_priority, current_status, category):
     main()
@@ -75,7 +81,9 @@ def commit_new_task_data(task_name, time_created, current_priority, current_stat
     status_id = cursor.lastrowid
     cursor.execute("INSERT INTO category (category) VALUES (?)", (category,))
     category_id = cursor.lastrowid
-    cursor.execute("INSERT INTO main (task_id, priority_id, status_id, category_id) VALUES (?,?,?,?)", (task_id, prioirty_id, status_id, category_id))
+    cursor.execute("INSERT INTO pomodoro (current_round, total_time) VALUES (?, ?)", (0, 0))
+    pomodoro_id = cursor.lastrowid
+    cursor.execute("INSERT INTO main (task_id, priority_id, status_id, category_id, pomodoro_id) VALUES (?,?,?,?,?)", (task_id, prioirty_id, status_id, category_id, pomodoro_id))
     connection.commit()
 
     return task_id
@@ -122,21 +130,25 @@ def change_status_db(prev_status, new_status, task_id, date):
 
 def delete_task_db(_id):
     cursor.execute("""
-    SELECT task_id, priority_id, status_id, category_id
+    SELECT task_id, priority_id, status_id, category_id, pomodoro_id
     FROM main
     INNER JOIN tasks USING(task_id)
     INNER JOIN priority USING(priority_id)
     INNER JOIN status USING(status_id)
     INNER JOIN category USING(category_id)
+    INNER JOIN pomodoro USING(pomodoro_id)
     WHERE task_id = ?
     """, (_id,))
     result = cursor.fetchone()
-    task_id, priority_id, status_id, category_id = result
+    task_id, priority_id, status_id, category_id, pomdoro_id = result
 
     cursor.execute("DELETE FROM main WHERE task_id = ?", (task_id,))
+    cursor.execute("DELETE FROM tasks WHERE task_id = ?", (task_id,))
     cursor.execute("DELETE FROM priority WHERE priority_id = ?", (priority_id,))
     cursor.execute("DELETE FROM status WHERE status_id = ?", (status_id,))
     cursor.execute("DELETE FROM category WHERE category_id = ?", (category_id,))
+    cursor.execute("DELETE FROM pomodoro WHERE pomodoro_id = ?", (pomdoro_id,))
+    
 
     connection.commit()
 
@@ -165,7 +177,6 @@ def get_task_status_count():
     return not_done, done
 
 def get_priority_data_for_bar_chart(LIMIT=20):
- 
     cursor.execute("""
     SELECT 
         strftime('%Y-%m-%d', last_marked_done) AS time,
@@ -180,6 +191,7 @@ def get_priority_data_for_bar_chart(LIMIT=20):
     WHERE time >= strftime('%Y-%m-%d', 'now', ?)
     GROUP BY time
 """, (f'-{LIMIT} days',))
+    
     all_dates = [datetime.now() - timedelta(i) for i in range(LIMIT)]
     all_dates = [date.strftime('%Y-%m-%d') for date in all_dates]
     all_dates.reverse()
