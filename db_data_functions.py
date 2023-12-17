@@ -190,7 +190,9 @@ def new_session_data(pomodoro_id):
         INSERT INTO session_data (pomodoro_id, session_start_time) VALUES (?, ?)
                 """, (pomodoro_id, datetime.now().strftime('%Y-%m-%d %H:%M')))
     
+    connection.commit()
     return cursor.lastrowid
+
 
 def update_session_data(session_id, total_duration, focus_time):
     cursor.execute(f"""
