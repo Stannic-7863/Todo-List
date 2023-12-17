@@ -162,7 +162,7 @@ class PriorityBarChart(QtCharts.QChart):
 
     def show_info_on_hover(self, label, value, all_dates, status, barindex):
         tool_tip = QToolTip()
-        tool_tip.showText(QCursor().pos(), f"Priority: {label} \n Tasks Done: {value[barindex]} \n At Day: {datetime.datetime.strptime(all_dates[barindex], "%Y-%m-%d").strftime("%A")} ,{all_dates[barindex]}")
+        tool_tip.showText(QCursor().pos(), f"Priority: {label} \n Tasks Done: {value[barindex]} \n At Day: {datetime.datetime.strptime(all_dates[barindex], '%Y-%m-%d').strftime('%A')} ,{all_dates[barindex]}")
         if not status:
             tool_tip.hideText()
 
