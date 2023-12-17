@@ -1,7 +1,9 @@
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
+import datetime
 from settings import *
+from db_data_functions import *
 
 task_color = (255,255,255)
 short_break_color = (10, 221, 8)
@@ -16,11 +18,12 @@ class Pomodoro(QWidget):
         self.start_icon = QIcon('./data/icons/start.png')
         self.pause_icon = QIcon('./data/icons/pause.png')
         #settings
-        self.total_minutes = 0.09
-        self.short_break_minute = 1
-        self.long_break_minutes = 2
+        self.total_minutes = 1
+        self.short_break_minute = 5
+        self.long_break_minutes = 15
         self.elapsed_seconds =  0 
-        self.focus_time = 0
+        self.focus_time_current_session = 0
+        self.focus_time_total = 0
         self.break_status = False
         self.total_long_break_interval = 4
         self.current_long_break_interval = 0
@@ -51,6 +54,7 @@ class Pomodoro(QWidget):
         self.long_break_timer.timeout.connect(self.break_over)
         
         self.quote = 'Focus'
+        self.status = 'focus'
         
         # Make and add the widgets
         self.container_widget = QWidget()
@@ -77,9 +81,13 @@ class Pomodoro(QWidget):
                                         }}
                                         """)  
         
+        self.task_label = Custom_QLabel()
+        self.task_label.setMaximumWidth(0)
+        
         self.header_widget_layout.addStretch()
         self.header_widget_layout.addWidget(self.get_task_name, alignment=Qt.AlignmentFlag.AlignCenter)
         self.header_widget_layout.addWidget(self.add_task_button, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.header_widget_layout.addWidget(self.task_label, alignment=Qt.AlignmentFlag.AlignCenter)
         self.header_widget_layout.addStretch()
 
         self.body_widget = QWidget()
@@ -116,18 +124,34 @@ class Pomodoro(QWidget):
         self.main_layout = QVBoxLayout()
         self.main_layout.addWidget(self.container_widget)
         self.setLayout(self.main_layout)
-
+        
     def on_add_task_button_clicked(self):
         self.animate_add_task_button()
     
     def set_task(self):
         text = self.get_task_name.text()
-        task_label = Custom_QLabel()
-        task_label.setText(text)
-        task_label.setMaximumWidth(0)
+        date_created = datetime.now()
+        date_created = date_created.strftime('%Y-%m-%d')
+        self.task_label.setText(text)
         self.animate_get_task()
-        self.header_widget_layout.insertWidget(1, task_label, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.animate_set_task(task_label)
+        self.animate_set_task(self.task_label)
+        self.add_task_time = self.focus_time_current_session
+        
+        self.task_id = commit_new_task_data(text, date_created, 'none', 'not done', None)
+        self.pomodoro_id = get_pomodoro_id(self.task_id)
+        self.session_id = new_session_data(self.pomodoro_id)
+        self.focus_time_total = 0
+        
+    def get_task(self, text, task_id):
+        self.task_label.setText(text)
+        self.animate_add_task_button(animate_close=True)
+        self.animate_get_task(animate_close=True)
+        self.animate_set_task(self.task_label)
+        self.add_task_time = self.focus_time_current_session
+        self.task_id = task_id
+        self.pomodoro_id = get_pomodoro_id(self.task_id)
+        self.session_id = new_session_data(self.pomodoro_id)
+        self.focus_time_total = get_total_time(self.pomodoro_id)
         
     def animate_set_task(self, label: QLabel):
         self.set_task_animation = QPropertyAnimation(label, b"maximumWidth")
@@ -174,12 +198,14 @@ class Pomodoro(QWidget):
             self.long_break_timer.start()
             self.display_time_total = self.long_break_seconds
             self.quote = 'Long Break'
+            self.status = 'long break'
             self.clock_widget.get_change_color(task_color, long_break_color)
             self.current_long_break_interval = 0
         else: 
             self.short_break_timer.start()
             self.display_time_total = self.short_break_seconds
             self.quote = 'Short Break'
+            self.status = 'short break'
             self.clock_widget.get_change_color(task_color, short_break_color)
         self.break_status = True
         self.display_time = 0
@@ -201,25 +227,39 @@ class Pomodoro(QWidget):
         self.display_time = 0 
         self.display_time_total = self.total_seconds
         self.quote = 'Focus'
+        self.status = 'focus'
 
     def start_pause_pomodoro(self):
         if self.display_timer.isActive() == False:
             self.start_pause_button.setIcon(self.pause_icon)
             self.display_timer.start()
-            self.timer.start()
+            if self.status == 'focus':
+                self.timer.start()
+            if self.status == 'long break':
+                self.long_break_timer.start()
+            if self.status == 'short break':
+                self.short_break_timer.start()
         else:
             self.start_pause_button.setIcon(self.start_icon)
             self.display_timer.stop()
             self.timer.stop()
-    
+            self.long_break_timer.stop()
+            self.short_break_timer.stop()
+        
     def update_clock_values(self):
         self.elapsed_seconds += 1
         self.display_time += 1
         if self.break_status == False:
-            self.focus_time += 1
+            self.focus_time_current_session += 1
+            self.focus_time_total += 1
+            if self.task_label.text():
+                update_pomodoro_data(self.pomodoro_id, self.current_rounds, self.focus_time_total)
+        
+        update_session_data(self.session_id, self.elapsed_seconds, self.focus_time_current_session)
+
         total_time, time = self.get_formatted_time()
         self.clock_widget.set_value(self.display_time, self.display_time_total, time, total_time, self.total_rounds, self.current_rounds, self.quote)
-
+        
     def get_formatted_time(self):
         display_minute, display_elapsed_seconds = divmod(self.display_time, 60)
         total_minutes, total_seconds = divmod(self.elapsed_seconds, 60)
@@ -250,7 +290,7 @@ class CircularProgressBar(QWidget):
         self.height = 350
         self.progress_width = 10
         self.progress_rounded_cap = True
-        self.progress_color = (255,255,255)
+        self.progress_color = QColor(255,255,255)
         self.max_value = 100
         self.font_size = 30
         self.font_size_small = 16
@@ -301,13 +341,11 @@ class CircularProgressBar(QWidget):
         paint.setPen(pen)
         paint.drawArc(margin, margin, width, height, 0, 360*16)
         
-        self.progress_pen = QPen()
-        self.progress_pen.setColor(QColor(255,255,255))
-        self.progress_pen.setWidth(self.progress_width/2)
-        
+        pen.setWidth(self.progress_width/2)
+        pen.setColor(self.progress_color)
         if self.progress_rounded_cap:
-            self.progress_pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-        paint.setPen(self.progress_pen)
+            pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        paint.setPen(pen)
         paint.drawArc(margin, margin, width, height, -90*16, -value*16)
 
         pen.setColor(QColor(255,255,255,120))
@@ -339,19 +377,18 @@ class CircularProgressBar(QWidget):
         paint.drawText(quote_rect, Qt.AlignmentFlag.AlignCenter, f"{self.quote}")
         
         paint.end() 
-        
+
     def get_change_color(self, color_from, color_to):
         animation = QVariantAnimation(self)
-        animation.setDuration(1000)
+        animation.setDuration(2000)
         animation.setStartValue(QColor(qRgb(color_from[0], color_from[1], color_from[2])))
         animation.setEndValue(QColor(qRgb(color_to[0], color_to[1], color_to[2])))
         animation.valueChanged.connect(lambda value: self.set_change_color(value))
         animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
-
+    
     def set_change_color(self, color):
-        self.progress_pen.setColor(color)
-        self.progress_pen.setBrush(QColor(color))
-        self.repaint()
+        self.progress_color = color
+        self.update()
 
 class Custom_QLineEdit(QLineEdit):
     def __init__(self, parent):
