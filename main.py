@@ -3,16 +3,16 @@ from custom_widgets import *
 from PySide6.QtGui import QFont, QFontDatabase, QIcon, QPainter
 from PySide6.QtCore import Qt, QSize, QPropertyAnimation, QRect, QEasingCurve
 from PySide6.QtWidgets import (QApplication,
-                             QMainWindow,
-                             QWidget,
-                             QVBoxLayout,
-                             QHBoxLayout,
-                             QScrollArea,
-                             QPushButton,
-                             QFrame,
-                             QTabWidget,
-                             QStackedLayout
-                             )
+                            QMainWindow,
+                            QWidget,
+                            QVBoxLayout,
+                            QHBoxLayout,
+                            QScrollArea,
+                            QPushButton,
+                            QFrame,
+                            QTabWidget,
+                            QStackedLayout
+                            )
 from PySide6 import QtCharts
 from db_data_functions import fetch_data, get_task_status_count, main
 from stat_widgets import *
@@ -68,8 +68,8 @@ class MainWindow(QMainWindow):
 
         self.show_hide_stats = QRadioButton()
         self.show_hide_stats.setStyleSheet(f"""QRadioButton::indicator {{
-                                           background: {primary};
-                                           border-radius: 2px;
+                                        background: {primary};
+                                        border-radius: 2px;
         }}
                                             QRadioButton::indicator:checked {{
                                             background: rgb{priority_mid};
@@ -85,7 +85,7 @@ class MainWindow(QMainWindow):
         self.buttons_container.setLayout(self.buttons_container_layout)
         self.taskwidget_layout.addWidget(self.buttons_container, alignment=Qt.AlignmentFlag.AlignCenter)
         self.taskwidget_layout.addStretch()
-       
+    
         self.piegraph_widget = QWidget()
         self.piegraph_widget_layout = QVBoxLayout()
         self.piegraph_widget.setLayout(self.piegraph_widget_layout)
