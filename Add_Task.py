@@ -52,6 +52,13 @@ class custom_checkbox(QCheckBox):
         
         self.create_sub_menu_priority()
         
+        edit = QAction('Edit', parent=self.parent)
+        self.menu.addAction(edit)
+        
+        pomodoro = QAction('Pomdoro', parent=self.parent)
+        pomodoro.triggered.connect(lambda : self.parent.pomodoro_widget.get_task(self.text, self.task_id))
+        self.menu.addAction(pomodoro)
+        
         delete = QAction('Delete', parent=self.parent)
         delete.triggered.connect(lambda : self.delete_task(self))
         self.menu.addAction(delete)
@@ -172,7 +179,6 @@ class Add_Task:
         
         self.loading_data = False
             
-
     def set_font(self):
         path = './data/fonts/bfont.TTF'
         fontinfo = QFontDatabase.applicationFontFamilies(QFontDatabase.addApplicationFont(path))
