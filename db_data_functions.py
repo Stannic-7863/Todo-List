@@ -11,6 +11,7 @@ current_version = 102
 def get_version():
     cursor.execute("PRAGMA user_version;")
     return cursor.fetchone()[0]
+
 def update_version():
     cursor.execute(f"PRAGMA user_version = {current_version};")
 
@@ -48,9 +49,22 @@ def main():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS pomodoro (
                 pomodoro_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                current_round INTEGER,
-                total_time
+                current_round INTEGER DEFAULT 0,
+                total_time INTEGER DEFAULT 0
         )
+    """)
+    
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS session_data (
+            session_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pomodoro_id INTEGER,
+            session_start_time TEXT,
+            session_end_time TEXT,
+            session_duration INT DEFAULT 0,
+            focus_time INT DEFAULT 0,
+            
+            FOREIGN KEY (pomodoro_id) REFERENCES pomodoro(pomodoro_id)
+        )   
     """)
     
     cursor.execute("""
@@ -71,7 +85,7 @@ def main():
 
     connection.commit()
 
-def commit_new_task_data(task_name, time_created, current_priority, current_status, category):
+def commit_new_task_data(task_name, time_created, current_priority='none', current_status='not done', category=None):
     main()
     cursor.execute("INSERT INTO tasks (task_name, time_created) VALUES (?, ?)", (task_name, time_created))
     task_id = cursor.lastrowid
@@ -87,6 +101,7 @@ def commit_new_task_data(task_name, time_created, current_priority, current_stat
     connection.commit()
 
     return task_id
+
 
 def change_priority_db(prev_priority, new_priority, task_id):
     cursor.execute("""
@@ -149,8 +164,53 @@ def delete_task_db(_id):
     cursor.execute("DELETE FROM category WHERE category_id = ?", (category_id,))
     cursor.execute("DELETE FROM pomodoro WHERE pomodoro_id = ?", (pomdoro_id,))
     
-
     connection.commit()
+    
+def update_pomodoro_data(pomodoro_id, current_round, total_time):
+    cursor.execute(f"""
+        UPDATE pomodoro 
+        SET current_round = {current_round},
+        total_time = {total_time}
+        WHERE pomodoro_id = {pomodoro_id} 
+                """)
+    connection.commit()
+    
+def get_total_time(pomodoro_id):
+    cursor.execute(f"""
+        SELECT total_time 
+        FROM pomodoro 
+        WHERE pomodoro_id = {pomodoro_id}
+                """)
+    
+    return(cursor.fetchone()[0])
+
+
+def new_session_data(pomodoro_id):
+    cursor.execute("""
+        INSERT INTO session_data (pomodoro_id, session_start_time) VALUES (?, ?)
+                """, (pomodoro_id, datetime.now().strftime('%Y-%m-%d %H:%M')))
+    
+    return cursor.lastrowid
+
+def update_session_data(session_id, total_duration, focus_time):
+    cursor.execute(f"""
+        UPDATE session_data
+        SET session_duration = ?,
+        focus_time = ?,
+        session_end_time = ?
+        WHERE session_id = ? 
+                """, (total_duration, focus_time, datetime.now().strftime('%Y-%m-%d %H:%M'), session_id))
+    connection.commit()
+    
+def get_pomodoro_id(task_id):
+    cursor.execute("""
+        SELECT pomodoro_id 
+        FROM main
+        INNER JOIN pomodoro USING(pomodoro_id)
+        WHERE pomodoro_id = ?
+                """, (task_id,))
+    
+    return(cursor.fetchone()[0])
 
 def fetch_data():
     main()
@@ -219,7 +279,7 @@ def get_priority_data_for_bar_chart(LIMIT=20):
     data_lst.append(mid)
     data_lst.append(low)
     data_lst.append(none)
-   
+
     return data_lst, dates_done, all_dates, LIMIT
 
 
