@@ -90,6 +90,7 @@ class Custom_Scroll_Bar(QScrollBar):
 class Add_Task_No_dialog(QWidget):
     def __init__(self, parent, mainwindowlayout):
         super().__init__(parent)
+        self.setMinimumWidth(200)
         self.parent = parent
         self.mainwindowlayout = mainwindowlayout
         self.limit = 300

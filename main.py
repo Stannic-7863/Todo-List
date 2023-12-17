@@ -1,6 +1,6 @@
 from settings import *
 from custom_widgets import *
-from PySide6.QtGui import QFont, QFontDatabase, QIcon, QPainter
+from PySide6.QtGui import QFont, QFontDatabase, QIcon, QPainter, QResizeEvent
 from PySide6.QtCore import Qt, QSize, QPropertyAnimation, QRect, QEasingCurve
 from PySide6.QtWidgets import (QApplication,
                             QMainWindow,
@@ -42,7 +42,7 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle('Yarikata')
         self.setMinimumHeight(800)
-        self.setMinimumWidth(700)
+        self.setMinimumWidth(400)
 
         self.central_layout = QHBoxLayout()
         central_widget = QWidget()
@@ -66,8 +66,8 @@ class MainWindow(QMainWindow):
         self.addtask.setContentsMargins(0,0,0,0)
         self.addtask.clicked.connect(self.on_addtask_clicked)
 
-        self.show_hide_stats = QRadioButton()
-        self.show_hide_stats.setStyleSheet(f"""QRadioButton::indicator {{
+        self.show_stats = QRadioButton()
+        self.show_stats.setStyleSheet(f"""QRadioButton::indicator {{
                                         background: {primary};
                                         border-radius: 2px;
         }}
@@ -75,13 +75,13 @@ class MainWindow(QMainWindow):
                                             background: rgb{priority_mid};
                                             }}
 """)
-        self.show_hide_stats.setChecked(True)
-        self.show_hide_stats.clicked.connect(self.animate_stat_hide_show)
+        self.show_stats.setChecked(True)
+        self.show_stats.toggled.connect(self.animate_stat_hide_show)
         self.addtask.setFixedWidth(200)
         self.buttons_container_layout = QHBoxLayout()
         self.buttons_container = QWidget()
         self.buttons_container_layout.addWidget(self.addtask, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.buttons_container_layout.addWidget(self.show_hide_stats, Qt.AlignmentFlag.AlignRight)
+        self.buttons_container_layout.addWidget(self.show_stats, Qt.AlignmentFlag.AlignRight)
         self.buttons_container.setLayout(self.buttons_container_layout)
         self.taskwidget_layout.addWidget(self.buttons_container, alignment=Qt.AlignmentFlag.AlignCenter)
         self.taskwidget_layout.addStretch()
@@ -298,6 +298,12 @@ class MainWindow(QMainWindow):
         self.animation.setStartValue(current_width)
         self.animation.setEndValue(newwidth)
         self.animation.start()
+    
+    def resizeEvent(self, event: QResizeEvent):
+        if event.size().width() <= 600:
+            self.show_stats.setChecked(False)
+        if event.size().width() >= 600:
+            self.show_stats.setChecked(True)
 
 if __name__ == '__main__':
     app = QApplication([])
