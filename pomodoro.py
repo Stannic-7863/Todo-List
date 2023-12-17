@@ -36,6 +36,9 @@ class Pomodoro(QWidget):
         self.display_time_total = self.total_seconds
         self.total_rounds = 4
         self.current_rounds = 0
+        
+        self.session_id = None
+        self.task_id = None
 
         self.display_timer = QTimer()
         self.display_timer.setInterval(1000)
@@ -152,6 +155,7 @@ class Pomodoro(QWidget):
         self.pomodoro_id = get_pomodoro_id(self.task_id)
         self.session_id = new_session_data(self.pomodoro_id)
         self.focus_time_total = get_total_time(self.pomodoro_id)
+        self.parent.stacked_display_layout.setCurrentWidget(self.parent.pomodoro_widget) 
         
     def animate_set_task(self, label: QLabel):
         self.set_task_animation = QPropertyAnimation(label, b"maximumWidth")
@@ -255,7 +259,8 @@ class Pomodoro(QWidget):
             if self.task_label.text():
                 update_pomodoro_data(self.pomodoro_id, self.current_rounds, self.focus_time_total)
         
-        update_session_data(self.session_id, self.elapsed_seconds, self.focus_time_current_session)
+        if self.session_id:
+            update_session_data(self.session_id, self.elapsed_seconds, self.focus_time_current_session)
 
         total_time, time = self.get_formatted_time()
         self.clock_widget.set_value(self.display_time, self.display_time_total, time, total_time, self.total_rounds, self.current_rounds, self.quote)
