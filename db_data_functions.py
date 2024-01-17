@@ -15,7 +15,7 @@ def get_version():
 def update_version():
     cursor.execute(f"PRAGMA user_version = {current_version};")
 
-def main():
+def setupDatabase():
     cursor.execute(""" 
         CREATE TABLE IF NOT EXISTS tasks (
                 task_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -86,7 +86,6 @@ def main():
     connection.commit()
 
 def commit_new_task_data(task_name, time_created, current_priority='none', current_status='not done', category=None):
-    main()
     cursor.execute("INSERT INTO tasks (task_name, time_created) VALUES (?, ?)", (task_name, time_created))
     task_id = cursor.lastrowid
     cursor.execute("INSERT INTO priority (current_priority) VALUES (?)", (current_priority,))
@@ -163,7 +162,7 @@ def delete_task_db(_id):
     cursor.execute("DELETE FROM status WHERE status_id = ?", (status_id,))
     cursor.execute("DELETE FROM category WHERE category_id = ?", (category_id,))
     cursor.execute("DELETE FROM pomodoro WHERE pomodoro_id = ?", (pomdoro_id,))
-    
+    cursor.execute("DELETE FROM session_data WHERE pomodoro_id = ?", (pomdoro_id,))
     connection.commit()
     
 def update_pomodoro_data(pomodoro_id, current_round, total_time):
@@ -184,6 +183,12 @@ def get_total_time(pomodoro_id):
     
     return(cursor.fetchone()[0])
 
+def set_new_task_name(task_id, name):
+    cursor.execute("""UPDATE tasks
+                    set task_name = ? 
+                    WHERE task_id = ?
+                """, (name, task_id))
+    connection.commit()
 
 def new_session_data(pomodoro_id):
     cursor.execute("""
@@ -215,7 +220,6 @@ def get_pomodoro_id(task_id):
     return(cursor.fetchone()[0])
 
 def fetch_data():
-    main()
     cursor.execute("""
     SELECT task_name, current_priority, current_status, category, task_id
     FROM main
@@ -225,7 +229,6 @@ def fetch_data():
     INNER JOIN category USING(category_id)
 """)
     results = cursor.fetchall()
-
     return results
 
 def get_task_status_count():

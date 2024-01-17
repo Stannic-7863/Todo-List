@@ -87,7 +87,7 @@ class Custom_Scroll_Bar(QScrollBar):
     def leaveEvent(self, event):
         start_animation(self, priority_mid, qprimary)
 
-class Add_Task_No_dialog(QWidget):
+class GetTaskFromUser(QWidget):
     def __init__(self, parent, mainwindowlayout):
         super().__init__(parent)
         self.setMinimumWidth(200)
@@ -210,7 +210,7 @@ class Add_Task_No_dialog(QWidget):
         current_datetime = datetime.datetime.now()
         formatted_date = current_datetime.strftime('%Y-%m-%d')
         task_id = commit_new_task_data(text, str(formatted_date), prio, 'not done', None)
-        add_task = Add_Task(self.parent, self.mainwindowlayout ,text, prio, 'not done', task_id)
+        Add_Task(self.parent, self.mainwindowlayout ,text, prio, 'not done', task_id)
 
         self.parent.on_task_added()
         self.parent.placeholder_widget.deleteLater()

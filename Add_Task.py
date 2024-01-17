@@ -1,72 +1,133 @@
 import datetime
+from sqlite3.dbapi2 import SQLITE_DBCONFIG_ENABLE_FKEY
 from PySide6.QtGui import *
 from PySide6.QtCore import *
+from PySide6.QtGui import QKeyEvent
 from PySide6.QtWidgets import *
 from settings import *
-from db_data_functions import change_priority_db, change_status_db, delete_task_db
+from db_data_functions import *
 import datetime
 
-class custom_checkbox(QCheckBox):
-    def __init__(self, text, parent, priority_str, mainwindowlayout, status, task_id, loading_data):
+class QLineEdit(QLineEdit):
+    def __init__(self, parent, color):
         super().__init__()
+        self.parent = parent
+        self.setStyleSheet(f"""background-color: rgb{color};
+                                border: none; 
+                                border-bottom: 1px solid white; 
+                                padding: 10px 0px 10px 0px; 
+                                font-size: 20px""")
+        
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Return:
+            self.parent.set_edit_task()
+        super().keyPressEvent(event)
 
-        layout = QHBoxLayout()
-        self.loading_data = loading_data
+class TaskCheckBox(QCheckBox):
+    
+    activeInstance = None
+    
+    def __init__(self, text, parent, priority_str, mainwindowlayout, status,taskId, loadingData):
+        super().__init__()
+        self.mainLayout = QHBoxLayout()
+        self.loadingData = loadingData
         self.parent = parent
         self.setParent(self.parent)
         self.text = text
         self.priority_str = priority_str
         self.mainwindowlayout = mainwindowlayout
         self.status = status
-        self.task_id = task_id
-
-        self.text_label = QLabel()
-        self.text_label.setText(self.text)
-        self.text_label.setWordWrap(True)
-        
-        option_menu = self.create_task_options()
-        
-        layout.addWidget(self.text_label)
-        layout.addWidget(option_menu, alignment= Qt.AlignmentFlag.AlignRight)
-
-        self.setLayout(layout)
-        self.mouse_inside = False
+        self.taskId = taskId
         
         self.color = get_color(self.priority_str)
         change_color(self, f"rgb{str(self.color)}")
         self.stateChanged.connect(lambda value: self.on_state_changed(value, self.color, self.parent))
         
-        self.set_style_sheet()
+        self.get_edit = QLineEdit(self, self.color) 
+
+        self.taskNameLabel = QLabel()
+        self.taskNameLabel.setText(self.text)
+        self.taskNameLabel.setWordWrap(True)
+        self.optionMenu = self.createOptionMenu()
+        self.infoButton = QToolButton()
+        self.isInfoToggled = False
+        self.infoButton.setText('Info button')
+        self.infoButton.clicked.connect(self.checkOtherToggled)
         
-    def create_task_options(self):
+        self.mainLayout.addWidget(self.taskNameLabel)
+        self.mainLayout.addStretch()
+        self.mainLayout.addWidget(self.infoButton, alignment=Qt.AlignmentFlag.AlignRight)
+        self.mainLayout.addWidget(self.optionMenu, alignment= Qt.AlignmentFlag.AlignRight)
+
+        self.setLayout(self.mainLayout)
+        self.mouse_inside = False
+        
+        self.setMainStyleSheet()
+        
+    def checkOtherToggled(self):
+        self.isInfoToggled = not self.isInfoToggled
+        if self.isInfoToggled:
+            if TaskCheckBox.activeInstance and TaskCheckBox.activeInstance != self : 
+                TaskCheckBox.activeInstance.isInfoToggled = False
+                
+            TaskCheckBox.activeInstance = self
+        else: 
+            TaskCheckBox.activeInstance = None
+        
+        self.parent.toggleTaskInfo(self.isInfoToggled, self.taskId)
+
+        
+    def createOptionMenu(self):
         self.options = QToolButton()
         self.options.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.options.setIcon(QIcon('./data/icons/menu.png'))
         self.options.setIconSize(QSize(30, 30))
-        self.options.setMenu(self.create_menu())
-
+        self.options.setMenu(self.createMenu()) 
         return self.options
     
-    def create_menu(self):
-        self.menu = QMenu(parent=self.parent)
-        
+    def createMenu(self):
+        self.menu = QMenu(self)    
         self.create_sub_menu_priority()
         
-        edit = QAction('Edit', parent=self.parent)
+        edit = QAction('Edit', self)
+        edit.triggered.connect(self.get_edit_task)
         self.menu.addAction(edit)
         
-        pomodoro = QAction('Pomdoro', parent=self.parent)
-        pomodoro.triggered.connect(lambda : self.parent.pomodoro_widget.get_task(self.text, self.task_id))
+        pomodoro = QAction('Pomdoro', self)
+        pomodoro.triggered.connect(lambda : self.parent.pomodoro_widget.get_task(self.text, self.taskId))
         self.menu.addAction(pomodoro)
         
-        delete = QAction('Delete', parent=self.parent)
+        delete = QAction('Delete', self)
         delete.triggered.connect(lambda : self.delete_task(self))
         self.menu.addAction(delete)
 
         return self.menu
-
+    
+    def get_edit_task(self):
+        self.taskNameLabel.setFixedWidth(0)
+        self.get_edit.show()
+        self.get_edit.setFocus()
+        self.mainLayout.insertWidget(1, self.get_edit)
+        
+        edit_height = self.get_edit.height()
+        margin = 30
+        self.setMaximumHeight(edit_height+30)
+        
+    def set_edit_task(self):
+        set_new_task_name(self.taskId, self.get_edit.text().strip())
+        self.mainLayout.removeWidget(self.get_edit)
+        self.taskNameLabel.setText(self.get_edit.text().strip())
+        self.get_edit.clear()
+        self.get_edit.hide()
+        self.get_edit.clearFocus()
+        self.taskNameLabel.setMaximumWidth(1000)
+        text_height = self.taskNameLabel.height()
+        height = self.height()
+        self.setMaximumHeight(text_height+height)
+    
     def create_sub_menu_priority(self):
         priority_menu = QMenu('Set Priority', parent=self.parent)
+        priority_menu.setStyleSheet(f"QMenu::item:selected {{ background-color : {primary}}}")
         action_group = QActionGroup(self.parent)
         m_high = QAction('High', parent=self.parent, checkable=True)
         m_mid = QAction('Mid', parent=self.parent, checkable=True)
@@ -90,8 +151,8 @@ class custom_checkbox(QCheckBox):
         if self.isChecked() == False:
             start_animation(self, current_color , self.color)
 
-        change_priority_db(previous_prio, self.priority_str, self.task_id)
-        if not self.loading_data:    
+        change_priority_db(previous_prio, self.priority_str, self.taskId)
+        if not self.loadingData:    
             self.update_graphs()
 
     def on_state_changed(self, value, color, parent):
@@ -101,36 +162,36 @@ class custom_checkbox(QCheckBox):
         current_datetime = datetime.datetime.now()
         formatted_date = current_datetime.strftime('%Y-%m-%d')
         
-        text_height = self.text_label.height()
+        text_height = self.taskNameLabel.height()
         height = self.height()
         self.setMaximumHeight(text_height+height)
         
         if state == Qt.CheckState.Unchecked:
             start_animation(self, task_done, color)
             self.status = 'not done'
-            self.parent.done_tasks_widget_layout.removeWidget(self)
+            self.parent.doneTasksWidgetLayout.removeWidget(self)
             self.mainwindowlayout.insertWidget(1, self)
-            if not self.loading_data: 
-                change_status_db(current_color, self.status, self.task_id, formatted_date) 
+            if not self.loadingData: 
+                change_status_db(current_color, self.status, self.taskId, formatted_date) 
         
         if state == Qt.CheckState.Checked:
             start_animation(self, color, task_done)
             self.status = 'done'
             self.mainwindowlayout.removeWidget(self)
-            self.parent.done_tasks_widget_layout.insertWidget(2, self)
-            if not self.loading_data:
-                change_status_db(current_color, self.status, self.task_id, formatted_date)
+            self.parent.doneTasksWidgetLayout.insertWidget(2, self)
+            if not self.loadingData:
+                change_status_db(current_color, self.status, self.taskId, formatted_date)
 
-        if not self.loading_data:  
+        if not self.loadingData:  
             self.update_graphs() 
         
     def update_graphs(self):
-        self.parent.priority_bar_chart.update()
+        self.parent.priorityBarChart.update()
         new_data = self.parent.get_task_status_data()
         self.parent.piegraph.update_data(new_data)
     
     def delete_task(self, widget: QCheckBox):
-        delete_task_db(self.task_id)
+        delete_task_db(self.taskId)
         widget.deleteLater()
         self.update_graphs()
     
@@ -143,7 +204,7 @@ class custom_checkbox(QCheckBox):
             if event.button() == Qt.MouseButton.LeftButton:
                 self.setChecked(not self.isChecked())
                 
-    def set_style_sheet(self):
+    def setMainStyleSheet(self):
         self.options.setStyleSheet(f"""
                                     QToolButton {{
                                     background-color : transparent;
@@ -152,15 +213,25 @@ class custom_checkbox(QCheckBox):
                                     QToolButton::menu-indicator {{
                                     image: none;
                                     }}
+                                    
+                                    QMenu::item:selected {{
+                                    background-color : {primary}
+                                    }}
                                     """)
+        
+        self.menu.setStyleSheet(f"""
+                                QMenu::item:selected {{
+                                    background-color : {primary}
+                                }}
+                                """)
 
-        self.text_label.setStyleSheet(f"font-size: 18px")
+        self.taskNameLabel.setStyleSheet(f"font-size: 18px")
 
 class Add_Task:
-    def __init__(self, parent, mainlayout, task_name, prio, status, task_id, loading_data=False):
+    def __init__(self, parent, mainlayout, task_name, prio, status,taskId, loadingData=False):
         self.set_font()
         
-        self.loading_data = loading_data
+        self.loadingData = loadingData
         self.text = task_name
         self.status = status
         self.mainwindowlayout = mainlayout
@@ -168,16 +239,17 @@ class Add_Task:
         self.text = self.text.strip()
 
         if self.text:
-            self.check_box = custom_checkbox(self.text, self.parent, prio, self.mainwindowlayout, self.status, task_id, self.loading_data)
+            self.check_box = TaskCheckBox(self.text, self.parent, prio, self.mainwindowlayout, self.status, taskId, self.loadingData)
 
             if self.status == 'done':
                 self.check_box.setChecked(True)
-                self.parent.done_tasks_widget_layout.insertWidget(2, self.check_box) 
+                self.parent.doneTasksWidgetLayout.insertWidget(2, self.check_box) 
             if self.status == 'not done':
                 self.check_box.setChecked(False) 
                 self.mainwindowlayout.insertWidget(1, self.check_box, alignment=Qt.AlignmentFlag.AlignTop)
         
-        self.loading_data = False
+        self.loadingData = False
+        self.check_box.loadingData = False
             
     def set_font(self):
         path = './data/fonts/bfont.TTF'

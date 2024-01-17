@@ -5,10 +5,6 @@ import datetime
 from settings import *
 from db_data_functions import *
 
-task_color = (255,255,255)
-short_break_color = (10, 221, 8)
-long_break_color = (255, 0, 13)
-
 class Pomodoro(QWidget):
     def __init__(self, parent):
         super().__init__()
@@ -84,14 +80,14 @@ class Pomodoro(QWidget):
                                         }}
                                         """)  
         
-        self.task_label = Custom_QLabel()
+        self.task_label = Custom_QLabel(self.create_task_label_menu())
         self.task_label.setMaximumWidth(0)
         
         self.header_widget_layout.addStretch()
         self.header_widget_layout.addWidget(self.get_task_name, alignment=Qt.AlignmentFlag.AlignCenter)
         self.header_widget_layout.addWidget(self.add_task_button, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.header_widget_layout.addWidget(self.task_label, alignment=Qt.AlignmentFlag.AlignCenter)
         self.header_widget_layout.addStretch()
+        self.header_widget_layout.addWidget(self.task_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.body_widget = QWidget()
         self.body_widget_layout = QVBoxLayout()
@@ -128,28 +124,63 @@ class Pomodoro(QWidget):
         self.main_layout.addWidget(self.container_widget)
         self.setLayout(self.main_layout)
         
+    def create_task_label_menu(self):
+        self.task_menu = QToolButton()
+        self.task_menu.setIcon(QIcon('./data/icons/menu.png'))
+        self.task_menu.setIconSize(QSize(50, 50))
+        self.task_menu.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        
+        menu = QMenu(self.parent)
+        
+        edit = QAction('Edit', self.parent)
+        edit.triggered.connect(self.edit_task_label)
+        remove = QAction('Remove', self.parent)
+        remove.triggered.connect(self.remove_task_label)
+        
+        menu.addAction(edit)
+        menu.addAction(remove)
+        
+        self.task_menu.setMenu(menu)
+        
+        return self.task_menu
+        
+    def edit_task_label(self):
+        self.get_task_name.clear()
+        self.get_task_name.setText(self.task_label.text())
+        
+        self.animate_set_task(animate_open=False)
+        self.animate_get_task(animate_open=True)
+        self.get_task_name.editing = True
+    
+    def commit_edit_task(self):
+        task_name = self.get_task_name.text()
+        set_new_task_name(self.task_id, task_name)
+        self.task_label.setText(task_name)
+        self.animate_get_task(animate_open=False)
+        self.animate_set_task(animate_open=True)
+    
+    def remove_task_label(self):
+        pass
+            
     def on_add_task_button_clicked(self):
-        self.animate_add_task_button()
+        self.animate_add_task_button(animate_open=False, animate_open_get_task=True)
     
     def set_task(self):
         text = self.get_task_name.text()
         date_created = datetime.now()
         date_created = date_created.strftime('%Y-%m-%d')
         self.task_label.setText(text)
-        self.animate_get_task()
-        self.animate_set_task(self.task_label)
         self.add_task_time = self.focus_time_current_session
-        
         self.task_id = commit_new_task_data(text, date_created, 'none', 'not done', None)
         self.pomodoro_id = get_pomodoro_id(self.task_id)
         self.session_id = new_session_data(self.pomodoro_id)
         self.focus_time_total = 0
         
+        self.animate_add_task_button(animate_open=False, animate_open_get_task=False)
+        self.animate_set_task(animate_open=True)
+        
     def get_task(self, text, task_id):
         self.task_label.setText(text)
-        self.animate_add_task_button(animate_close=True)
-        self.animate_get_task(animate_close=True)
-        self.animate_set_task(self.task_label)
         self.add_task_time = self.focus_time_current_session
         self.task_id = task_id
         self.pomodoro_id = get_pomodoro_id(self.task_id)
@@ -157,42 +188,47 @@ class Pomodoro(QWidget):
         self.focus_time_total = get_total_time(self.pomodoro_id)
         self.parent.stacked_display_layout.setCurrentWidget(self.parent.pomodoro_widget) 
         
-    def animate_set_task(self, label: QLabel):
-        self.set_task_animation = QPropertyAnimation(label, b"maximumWidth")
-        self.set_task_animation.setStartValue(0)
-        self.set_task_animation.setEndValue(600)
+        self.animate_add_task_button(animate_open=False, animate_open_get_task=False)
+        self.animate_set_task(animate_open=True)
+        
+    def animate_set_task(self, animate_open=True):
+        self.set_task_animation = QPropertyAnimation(self.task_label, b"maximumWidth")
+        self.set_task_animation.setStartValue(self.task_label.width())
+        if animate_open == True:
+            self.set_task_animation.setEndValue(600)
+        else:
+            self.set_task_animation.setEndValue(0)
         self.set_task_animation.setEasingCurve(QEasingCurve.Type.InExpo)
         self.set_task_animation.setDuration(1500)
         self.set_task_animation.start()
     
-    def animate_add_task_button(self, animate_open=False, animate_close=False):
-        if self.get_task_name.width() == 0 or animate_open:
-            self.animation_task_button = QPropertyAnimation(self.add_task_button, b'maximumWidth')
-            self.animation_task_button.setStartValue(self.add_task_button.width())
-            self.animation_task_button.setEndValue(0)
-        elif self.get_task_name.width() != 0 or animate_close:
-            self.animation_task_button = QPropertyAnimation(self.add_task_button, b'maximumWidth')
-            self.animation_task_button.setStartValue(self.add_task_button.width())
+    def animate_add_task_button(self, animate_open, animate_open_get_task):
+        self.animation_task_button = QPropertyAnimation(self.add_task_button, b'maximumWidth')
+        self.animation_task_button.setStartValue(self.add_task_button.width())
+        
+        if animate_open == True:
             self.animation_task_button.setEndValue(50)
+        else:
+            self.animation_task_button.setEndValue(0)
             
         self.animation_task_button.setEasingCurve(QEasingCurve.Type.InCubic)
-        self.animation_task_button.finished.connect(self.animate_get_task)
+        self.animation_task_button.finished.connect(lambda : self.animate_get_task(animate_open=animate_open_get_task))
         self.animation_task_button.start()
 
-    def animate_get_task(self, animate_open=False, animate_close=False):
-        if self.get_task_name.width() == 0 or animate_open:
-            self.animation_get_task = QPropertyAnimation(self.get_task_name, b'minimumWidth')
-            self.animation_get_task.setStartValue(self.get_task_name.width())
+    def animate_get_task(self, animate_open):
+        self.animation_get_task = QPropertyAnimation(self.get_task_name, b'minimumWidth')
+        self.animation_get_task.setStartValue(self.get_task_name.width())
+        
+        if animate_open == True:
             self.animation_get_task.setEndValue(400)
             self.animation_get_task.setEasingCurve(QEasingCurve.Type.OutBack)
             self.get_task_name.setFocus()
         
-        elif self.get_task_name.width() != 0 or animate_close:
-            self.animation_get_task = QPropertyAnimation(self.get_task_name, b'minimumWidth')
-            self.animation_get_task.setStartValue(self.get_task_name.width())
+        else:
             self.animation_get_task.setEndValue(0)
             self.animation_get_task.setEasingCurve(QEasingCurve.Type.InBack)
             self.get_task_name.clearFocus()
+        
         self.animation_get_task.setDuration(500)
         self.animation_get_task.start()
     
@@ -399,19 +435,44 @@ class Custom_QLineEdit(QLineEdit):
     def __init__(self, parent):
         super().__init__()
         self.parent = parent
+        self.editing = False
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key_Escape:
-            self.parent.animate_add_task_button()
-        if event.key() == Qt.Key_Return:
+            self.parent.animate_add_task_button(animate_open=True, animate_open_get_task=False)
+        if event.key() == Qt.Key_Return and self.editing == False:
             self.parent.set_task()
+        if event.key() == Qt.Key_Return and self.editing == True:
+            self.parent.commit_edit_task()
+            self.editing = False
 
         super().keyPressEvent(event)
 
-class Custom_QLabel(QLabel):
-    def __init__(self):
-        super().__init__()
+class Custom_QLabel(QWidget):
+    def __init__(self, options):
+        super().__init__() 
+        self.label = QLabel()
+        
+        self.layout = QHBoxLayout()
+        self.setLayout(self.layout)
+        
+        self.layout.addWidget(self.label)
+        self.layout.addWidget(options)
+        
         self.setStyleSheet(f"""QLabel {{
                         font-size: 30px;
                         font-weight: 50;              
-        }}""")
+                        }}
+                        QToolButton {{
+                            border: none
+                        }}
+                        QToolButton:menu-indicator {{
+                            image:none
+                        }}
+                        """)
+
+    def setText(self, text):
+        self.label.setText(text)
+        
+    def text(self):
+        return self.label.text()

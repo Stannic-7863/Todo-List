@@ -18,6 +18,11 @@ priority_high = (237,76,76)
 priority_none = (57, 62, 70)
 task_done = (11, 219, 123)
 
+
+task_color = (255,255,255)
+short_break_color = (10, 221, 8)
+long_break_color = (255, 0, 13)
+
 background_hex = '#222831'
 primary_hex = '#393E46'
 
