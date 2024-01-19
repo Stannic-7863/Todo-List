@@ -1,19 +1,10 @@
 from settings import *
 from custom_widgets import *
-from PySide6.QtGui import QFont, QFontDatabase, QIcon, QPainter, QResizeEvent
-from PySide6.QtCore import Qt, QSize, QPropertyAnimation, QRect, QEasingCurve
-from PySide6.QtWidgets import (QApplication,
-                            QMainWindow,
-                            QWidget,
-                            QVBoxLayout,
-                            QHBoxLayout,
-                            QScrollArea,
-                            QPushButton,
-                            QFrame,
-                            QStackedLayout
-                            )
+from PySide6.QtGui import *
+from PySide6.QtCore import *
+from PySide6.QtWidgets import *
 from PySide6 import QtCharts
-from db_data_functions import fetch_data, get_task_status_count, setupDatabase
+from db_data_functions import *
 from stat_widgets import *
 from pomodoro import Pomodoro
 
@@ -22,7 +13,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         setupDatabase()
         self.font_init()
-        self.getting_task = False
+        self.gettingTask = False
         self.isTabMenuOpen = False
         self.ui_init()
         self.setMouseTracking(True)
@@ -63,14 +54,7 @@ class MainWindow(QMainWindow):
         self.addTaskButton.clicked.connect(self.onAddtaskClicked)
 
         self.toggleStatsButton = QRadioButton()
-        self.toggleStatsButton.setStyleSheet(f"""QRadioButton::indicator {{
-                                        background: {primary};
-                                        border-radius: 2px;
-        }}
-                                            QRadioButton::indicator:checked {{
-                                            background: rgb{priority_mid};
-                                            }}
-""")
+
         self.toggleStatsButton.setChecked(True)
         self.toggleStatsButton.toggled.connect(self.toggleStats)
         self.addTaskButton.setFixedWidth(200)
@@ -82,15 +66,14 @@ class MainWindow(QMainWindow):
         self.taskwidgetLayout.addWidget(self.buttonsContainer, alignment=Qt.AlignmentFlag.AlignCenter)
         self.taskwidgetLayout.addStretch()
     
-        self.DoneUndoneTaskPieChartWidget = QWidget()
-        self.piegraph_widget_layout = QVBoxLayout()
-        self.DoneUndoneTaskPieChartWidget.setLayout(self.piegraph_widget_layout)
+        self.TaskPieGraphWidget = QWidget()
+        self.piegraphWidgetLayout = QVBoxLayout()
+        self.TaskPieGraphWidget.setLayout(self.piegraphWidgetLayout)
         
-        task_status_data = self.getTaskStatusData()
-        self.piegraph = PieGraph(task_status_data)
+        self.piegraph = PieGraph(self)
         pieChartVeiw = QtCharts.QChartView(self.piegraph)
         pieChartVeiw.setRenderHint(QPainter.Antialiasing)
-        self.piegraph_widget_layout.addWidget(pieChartVeiw)
+        self.piegraphWidgetLayout.addWidget(pieChartVeiw)
 
         self.priorityBarChartWidget = QWidget()
         self.priorityBarChartLayout = QVBoxLayout()
@@ -101,7 +84,7 @@ class MainWindow(QMainWindow):
         self.priorityBarChartLayout.addWidget(barChartVeiw)
 
         self.statWidgetLayout.addWidget(self.priorityBarChartWidget)
-        self.statWidgetLayout.addWidget(self.DoneUndoneTaskPieChartWidget)
+        self.statWidgetLayout.addWidget(self.TaskPieGraphWidget)
 
         self.taskScroll = QScrollArea()
         self.taskScroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
@@ -120,17 +103,17 @@ class MainWindow(QMainWindow):
         self.statScroll.setVerticalScrollBar(customScrollStat)
         self.statScroll.setMaximumWidth((QApplication.primaryScreen().size().width())/2.5)
 
-        self.stacked_display = QWidget()
-        self.stackedLayout = QStackedLayout()
-        self.stacked_display.setLayout(self.stackedLayout)
+        self.stackedContainerWidget = QWidget()
+        self.stackedContainerLayout = QStackedLayout()
+        self.stackedContainerWidget.setLayout(self.stackedContainerLayout)
         
         self.navMenuWidget = QWidget()
         self.navMenuWidget.setMaximumWidth(0)
         self.navMenuWidgetLayout = QVBoxLayout()
         self.navMenuWidget.raise_()
         self.navMenuWidget.setLayout(self.navMenuWidgetLayout)
-        self.navMenuWidget.setStyleSheet(f"background-color: {background_dark}; border-radius: 7px")
-        titleLabel = ItemLable('YARIKATA', self.stackedLayout, self.homeWidget)
+        self.navMenuWidget.setStyleSheet(f"background-color: {backgroundDarkColor}; border-radius: 7px")
+        titleLabel = ItemLable('YARIKATA', self.stackedContainerLayout, self.homeWidget)
         titleLabel.setStyleSheet("""
                                 font-size: 30px;
                                 """)
@@ -153,32 +136,45 @@ class MainWindow(QMainWindow):
         self.doneTasksWidgetLayout.addStretch()
         self.doneTaskWidget.setLayout(self.doneTasksWidgetLayout)
 
-
         self.taskInfoWidget = QWidget()
         self.taskInfoWidgetLayout = QVBoxLayout()
         self.taskInfoWidget.setLayout(self.taskInfoWidgetLayout)
         
-        self.taskInfoScroll = QScrollArea()
-        self.taskInfoScroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.taskInfoScroll.setWidgetResizable(True)
-        self.taskInfoScroll.setWidget(self.taskInfoWidget)
-        self.taskInfoScroll.setMaximumWidth(0)
+        self.taskInfoScrollArea = QScrollArea()
+        self.taskInfoScrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.taskInfoScrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.taskInfoScrollArea.setWidgetResizable(True)
+        self.taskInfoScrollArea.setWidget(self.taskInfoWidget)
+        self.taskInfoScrollArea.setMaximumWidth(0)
         
-        doneTaskScroll = QScrollArea()
-        doneTaskScroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        doneTaskScroll.setWidgetResizable(True)
-        doneTaskScroll.setWidget(self.doneTaskWidget)
-        custom_done_scroll = Custom_Scroll_Bar()
-        doneTaskScroll.setVerticalScrollBar(custom_done_scroll)
+        self.taskNameEdit = QPlainTextEdit()
+        self.taskNameEdit.installEventFilter(self)
+        self.taskNameEdit.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.taskNameEdit.textChanged.connect(self.adjustTaskNameEditHeight)
+        self.taskNameEdit.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.taskNameEdit.clearFocus()
+        self.taskStatsWidgetLayout = QVBoxLayout()
+        self.taskStatsWidget = QWidget()
+        self.taskStatsWidget.setLayout(self.taskStatsWidgetLayout)
+
+        self.taskInfoWidgetLayout.addWidget(self.taskNameEdit, alignment=Qt.AlignmentFlag.AlignTop)
+        self.taskInfoWidgetLayout.addWidget(self.taskStatsWidget, alignment=Qt.AlignmentFlag.AlignCenter)
+        
+        doneTaskScrollArea = QScrollArea()
+        doneTaskScrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        doneTaskScrollArea.setWidgetResizable(True)
+        doneTaskScrollArea.setWidget(self.doneTaskWidget)
+        doneTaskScrollBar = Custom_Scroll_Bar()
+        doneTaskScrollArea.setVerticalScrollBar(doneTaskScrollBar)
 
         self.pomodoroWidget = Pomodoro(self)
-        homeTabLabel = ItemLable('Home', self.stackedLayout, self.homeWidget)
-        tasksDoneTabLabel = ItemLable('Task Done', self.stackedLayout, doneTaskScroll)
-        pomodoroTabLabel = ItemLable('Pomodoro', self.stackedLayout, self.pomodoroWidget)
+        homeTabLabel = ItemLable('Home', self.stackedContainerLayout, self.homeWidget)
+        tasksDoneTabLabel = ItemLable('Task Done', self.stackedContainerLayout, doneTaskScrollArea)
+        pomodoroTabLabel = ItemLable('Pomodoro', self.stackedContainerLayout, self.pomodoroWidget)
 
-        self.set_tab_style_sheet(homeTabLabel)
-        self.set_tab_style_sheet(tasksDoneTabLabel)
-        self.set_tab_style_sheet(pomodoroTabLabel)
+        self.setNavTabStyleSheet(homeTabLabel)
+        self.setNavTabStyleSheet(tasksDoneTabLabel)
+        self.setNavTabStyleSheet(pomodoroTabLabel)
 
         self.navMenuWidgetLayout.addWidget(titleLabel, alignment=Qt.AlignmentFlag.AlignCenter)
         self.navMenuWidgetLayout.addWidget(seperation_frame)
@@ -187,40 +183,17 @@ class MainWindow(QMainWindow):
         self.navMenuWidgetLayout.addWidget(pomodoroTabLabel)
         self.navMenuWidgetLayout.addStretch()
 
-        self.stackedLayout.addWidget(self.homeWidget)
-        self.stackedLayout.addWidget(doneTaskScroll)
-        self.stackedLayout.addWidget(self.pomodoroWidget)
-        self.stackedLayout.setCurrentWidget(self.homeWidget) 
+        self.stackedContainerLayout.addWidget(self.homeWidget)
+        self.stackedContainerLayout.addWidget(doneTaskScrollArea)
+        self.stackedContainerLayout.addWidget(self.pomodoroWidget)
+        self.stackedContainerLayout.setCurrentWidget(self.homeWidget) 
 
         self.homeWidget.layout().addWidget(self.taskScroll)
         self.homeWidget.layout().addWidget(self.statScroll)
-        self.homeWidget.layout().addWidget(self.taskInfoScroll)
+        self.homeWidget.layout().addWidget(self.taskInfoScrollArea)
         self.centralLayout.addWidget(self.navMenuWidget, Qt.AlignmentFlag.AlignTop)
-        self.centralLayout.addWidget(self.stacked_display)
-        
+        self.centralLayout.addWidget(self.stackedContainerWidget)
         self.setCentralWidget(self.centralWidget)
-        self.setStyleSheet(f"""
-                        QWidget {{
-                        background-color: {background}; 
-                        color: white;
-                        }}
-                        """)
-        self.statswidget.setStyleSheet("""
-                                    QWidget {{
-                                    border-radius : 5px;
-                                    }}
-                                    """)
-        self.addTaskButton.setStyleSheet(f"""QPushButton {{
-                                color: white;
-                                background-color: none;
-                                padding: 10px;
-                                border: 2px solid white;
-                                border-radius: 12px;
-                                }}
-                                QPushButton:hover {{
-                                background-color: {primary}
-                                }}
-                                """)
         
         data = fetch_data()
         for items in data:
@@ -229,41 +202,69 @@ class MainWindow(QMainWindow):
 
         self.showMaximized()
         
-    def toggleTaskInfo(self, checked, taskId):
-        if self.toggleStatsButton.isChecked():
-            self.toggleStatsButton.setChecked(False)
+        self.setStyleSheet(f"""
+                        QWidget {{
+                            background-color: {backgroundColor}; 
+                            color: white;
+                        }}
+                        QPlainTextEdit {{
+                            border : none;
+                            font : {fontSize}px;
+                            padding-top : 8px;
+                        }}
+                        QPlainTextEdit:focus {{
+                            border : 1px solid white;
+                            border-radius : 10px
+                        }}
+                        """)
         
-        self.showStateAnimation = QPropertyAnimation(self.taskInfoScroll, b'maximumWidth')
-        self.showStateAnimation.setStartValue(self.taskInfoScroll.width())
+        self.toggleStatsButton.setStyleSheet(f"""
+                                        QRadioButton::indicator {{
+                                            background: {primaryColor};
+                                            border-radius: 2px;
+                                        }}
+                                        QRadioButton::indicator:checked {{
+                                            background: {priorityMidColor}; 
+                                        }}""")
         
-        if checked is True : 
-            self.showStateAnimation.setEndValue(0)
-            self.showStateAnimation.setEndValue(400)
-            self.displayTaskInfo(taskId)
-        else :     
-            self.showStateAnimation.setEndValue(400)
-            self.showStateAnimation.setEndValue(0)
+        self.statswidget.setStyleSheet("""
+                                    QWidget {{
+                                        border-radius : 5px;
+                                    }}
+                                    """)
         
-        self.showStateAnimation.setDuration(500)
-        self.showStateAnimation.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)     
-        
-    def displayTaskInfo(self, taskId):
-        pass
-
-    def set_tab_style_sheet(self, widget):
-        widget.setStyleSheet(f"""QLabel {{
-                            font-size: 15px;
-                            border-radius: 3px;
-                            padding: 5px 2px 5px 2px;
+        self.addTaskButton.setStyleSheet(f"""
+                                QPushButton {{
+                                    color: white;
+                                    background-color: none;
+                                    padding: 10px;
+                                    border: 2px solid white;
+                                    border-radius: 12px;
+                                }}
+                                QPushButton:hover {{
+                                    background-color: {primaryColor}
+                                }}
+                                """)
+    
+    def setNavTabStyleSheet(self, widget):
+        widget.setStyleSheet(f"""
+                            QLabel {{
+                                font-size: 15px;
+                                border-radius: 3px;
+                                padding: 5px 2px 5px 2px;
                             }}
                             QLabel::hover {{
-                            background-color : {accent_dark}
+                                background-color : {accentdarkColor}
                             }}
                             """)
     
+    def displayTaskInfo(self, taskId):
+        taskName = getTaskName(taskId)
+        self.taskNameEdit.setPlainText(taskName)
+
     def onAddtaskClicked(self):
-        if not self.getting_task:
-            self.getting_task = True
+        if not self.gettingTask:
+            self.gettingTask = True
             layout = QHBoxLayout()    
             self.placeholder_widget = QWidget()
             self.placeholder_widget.setLayout(layout)
@@ -272,32 +273,18 @@ class MainWindow(QMainWindow):
             self.taskwidgetLayout.insertWidget(1 , self.placeholder_widget) 
 
             self.placeholder_widget.setStyleSheet(f"""
-                                                background : {primary}; 
+                                                background : {primaryColor}; 
                                                 max-width: 2000; 
                                                 border-radius: 5px
                                                 """)
-
-    def getTaskStatusData(self):
-        not_done, done = get_task_status_count()
-        
-        undone_task = {'name' : 'Not Completed', 
-                    'value': not_done, 
-                    'primary_color': QColor(piegraph_primary_hex_undone), 
-                    'secondary_color': QColor(piegraph_secondary_hex_undone)}
-        
-        done_task = {'name' : 'Completed', 
-                    'value': done, 
-                    'primary_color': QColor(piegraph_primary_hex_done), 
-                    'secondary_color': QColor(piegraph_secondary_hex_done)}
-        
-        data = [undone_task, done_task]
-
-        return data
-    
+            
     def onTaskAdded(self):
-        self.getting_task = False
-        self.piegraph.update_data(self.getTaskStatusData())
+        self.gettingTask = False
+        self.piegraph.update_data()
 
+    def adjustTaskNameEditHeight(self):
+        textHeight = self.taskNameEdit.document().size().height()
+        self.taskNameEdit.setFixedHeight((textHeight * fontSize) + fontSize)
     
     def toggleStats(self):
         currentWidth = self.statScroll.width()
@@ -314,10 +301,30 @@ class MainWindow(QMainWindow):
         self.animation.setStartValue(currentWidth)
         self.animation.setEndValue(newWidth)
         self.statWidgetLayout.removeWidget(self.priorityBarChartWidget)
-        self.statWidgetLayout.removeWidget(self.DoneUndoneTaskPieChartWidget)
+        self.statWidgetLayout.removeWidget(self.TaskPieGraphWidget)
         self.animation.start()
         self.statWidgetLayout.addWidget(self.priorityBarChartWidget)
-        self.statWidgetLayout.addWidget(self.DoneUndoneTaskPieChartWidget)
+        self.statWidgetLayout.addWidget(self.TaskPieGraphWidget)
+        
+    def toggleTaskInfo(self, checked, taskId):
+        if self.toggleStatsButton.isChecked():
+            self.toggleStatsButton.setChecked(False)
+        
+        self.currentEditingTaskId = taskId
+        
+        self.showStateAnimation = QPropertyAnimation(self.taskInfoScrollArea, b'maximumWidth')
+        self.showStateAnimation.setStartValue(self.taskInfoScrollArea.width())
+        
+        if checked is True : 
+            self.showStateAnimation.setEndValue(0)
+            self.showStateAnimation.setEndValue(400)
+            self.displayTaskInfo(self.currentEditingTaskId)
+        else :     
+            self.showStateAnimation.setEndValue(400)
+            self.showStateAnimation.setEndValue(0)
+        
+        self.showStateAnimation.setDuration(500)
+        self.showStateAnimation.start(QPropertyAnimation.DeletionPolicy.DeleteWhenStopped)  
     
     def toggleNavMenu(self):
         self.animation = QPropertyAnimation(self.navMenuWidget, b"maximumWidth")
@@ -333,7 +340,7 @@ class MainWindow(QMainWindow):
         self.animation.setDuration(400)
         self.animation.setStartValue(currentWidth)
         self.animation.setEndValue(newWidth)
-        self.animation.start()
+        self.animation.start()     
     
     def resizeEvent(self, event: QResizeEvent):
         if event.size().width() <= 600:
@@ -346,6 +353,19 @@ class MainWindow(QMainWindow):
             self.isTabMenuOpen = not self.isTabMenuOpen
             self.toggleNavMenu()
 
+    def eventFilter(self, source: QObject, event: QEvent) -> bool:
+        if source == self.taskNameEdit and self.taskNameEdit.hasFocus() is True:
+            if event.type() == QEvent.KeyPress:
+                if event.key() == Qt.Key.Key_Return and event.modifiers() == Qt.KeyboardModifier.ShiftModifier: 
+                    self.taskNameEdit.insertPlainText("\n")
+                    return True
+                elif event.key() == Qt.Key.Key_Return:
+                    updateTaskName(self.currentEditingTaskId, self.taskNameEdit.toPlainText().strip())
+                    self.taskNameEdit.clearFocus()
+                    return True
+
+        return super().eventFilter(source, event)
+    
 if __name__ == '__main__':
     app = QApplication([])
     windows = MainWindow()

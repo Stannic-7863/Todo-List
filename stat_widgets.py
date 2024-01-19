@@ -4,18 +4,16 @@ from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 from functools import partial
 from settings import *
-from db_data_functions import get_priority_data_for_bar_chart
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-import matplotlib.pyplot as plt
+from db_data_functions import fetchBarChartPriorityData, fetchPiegraphData
 import datetime
-import pandas as pd
 
 
 class PieGraph(QtCharts.QChart):
-    def __init__(self, data):
+    def __init__(self, parent):
         super().__init__()
+        self.parent = parent
         self.setMinimumHeight(400)
-        self._data = data 
+        self.data = self.getData()
         self.setAnimationOptions(QtCharts.QChart.SeriesAnimations)
         self.outer = QtCharts.QPieSeries()
         self.inner = QtCharts.QPieSeries()
@@ -23,7 +21,7 @@ class PieGraph(QtCharts.QChart):
         self.inner.setPieSize(0.4)
         self.inner.setHoleSize(0.3)
 
-        self.setBackgroundBrush(QBrush(QColor(qRgb(qbackground[0], qbackground[1], qbackground[2]))))
+        self.setBackgroundBrush(QBrush(QColor(backgroundColor)))
     
         self.set_outer_series()
         self.set_inner_series()
@@ -39,11 +37,11 @@ class PieGraph(QtCharts.QChart):
     
     def set_outer_series(self):
         slices = list()
-        for data in self._data:
+        for data in self.data:
             slice_ = QtCharts.QPieSlice(data['name'], data['value'])
             slice_.setLabelVisible()
-            slice_.setColor(data['primary_color'])
-            slice_.setLabelBrush(data['primary_color'])
+            slice_.setColor(QColor(data['primary_color']))
+            slice_.setLabelBrush(QColor(data['primary_color']))
 
             slices.append(slice_)
             self.outer.append(slice_)
@@ -51,10 +49,10 @@ class PieGraph(QtCharts.QChart):
             slice_.hovered.connect(partial(self.explode, slice_, str(data['value']), data['name']))
     
     def set_inner_series(self):
-        for data in self._data:
+        for data in self.data:
             slice_ = self.inner.append(data['name'], data['value'])
-            slice_.setColor(data['secondary_color'])
-            slice_.setBorderColor(data['secondary_color'])
+            slice_.setColor(QColor(data['secondary_color']))
+            slice_.setBorderColor(QColor(data['secondary_color']))
 
     def explode(self, slice_,count, name, is_hovered):
         if is_hovered:
@@ -72,9 +70,9 @@ class PieGraph(QtCharts.QChart):
         slice_.setExplodeDistanceFactor(0.1)
         slice_.setExploded(is_hovered)
 
-    def update_data(self, new_data):
+    def update(self):
         self.clear_series()
-        self._data = new_data
+        self.data = self.getData()
         self.set_inner_series()
         self.set_outer_series()
 
@@ -82,6 +80,9 @@ class PieGraph(QtCharts.QChart):
         for marker in legend.markers():
             if marker.series() == self.inner:
                 marker.setVisible(False)
+
+    def getData(self):
+        return fetchPiegraphData()
     
     def clear_series(self):
         self.outer.clear()
@@ -108,8 +109,8 @@ class PriorityBarChart(QtCharts.QChart):
             barset = QtCharts.QBarSet(item['label'])
             barset.append(bar_lst)
             self.barchart.append(barset)
-            barset.setColor(QColor(qRgb(item['color'][0],item['color'][1],item['color'][2])))
-            barset.hovered.connect(partial(self.show_info_on_hover, item['label'], bar_lst, self.all_dates))
+            barset.setColor(QColor(item['color']))
+            barset.hovered.connect(partial(self.showInfoOnHover, item['label'], bar_lst, self.all_dates))
         
 
         self.setTitle(f"Tasks done in the previous {self.limit} days")
@@ -118,7 +119,7 @@ class PriorityBarChart(QtCharts.QChart):
         self.legend().setAlignment(Qt.AlignBottom)
         self.legend().setLabelBrush(QColor(qRgb(255,255,255)))
         self.setTitleBrush(QColor(qRgb(255,255,255)))
-        self.setBackgroundBrush(QColor(qRgb(qbackground[0], qbackground[1], qbackground[2])))
+        self.setBackgroundBrush(QColor(backgroundColor))
 
     
     def update(self):
@@ -127,7 +128,7 @@ class PriorityBarChart(QtCharts.QChart):
         self.set_axis()
 
     def get_variables(self):
-        self.priority_data, self.dates_done, self.all_dates, self.limit = get_priority_data_for_bar_chart(self.days)
+        self.priority_data, self.dates_done, self.all_dates, self.limit = fetchBarChartPriorityData(self.days)
         self.removeSeries(self.barchart)
         self.barchart = QtCharts.QStackedBarSeries()
         self.barchart.setBarWidth(0.8)
@@ -160,24 +161,9 @@ class PriorityBarChart(QtCharts.QChart):
         self.axisX().setGridLineVisible(False)
         self.axisY().setGridLineVisible(False)
 
-    def show_info_on_hover(self, label, value, all_dates, status, barindex):
+    def showInfoOnHover(self, label, value, all_dates, status, barindex):
         tool_tip = QToolTip()
         tool_tip.showText(QCursor().pos(), f"Priority: {label} \n Tasks Done: {value[barindex]} \n At Day: {datetime.datetime.strptime(all_dates[barindex], '%Y-%m-%d').strftime('%A')} ,{all_dates[barindex]}")
+        
         if not status:
             tool_tip.hideText()
-
-class HeatMap(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setMinimumHeight(200)
-        self.fig = plt.figure(figsize=(5,6))
-        
-        self.fig.patch.set_facecolor(background_hex)
-        self.canvas = FigureCanvas(self.fig)
-
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
-        self.setLayout(layout)
-        
-        
-        

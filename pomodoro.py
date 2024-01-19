@@ -13,13 +13,13 @@ class Pomodoro(QWidget):
 
         self.start_icon = QIcon('./data/icons/start.png')
         self.pause_icon = QIcon('./data/icons/pause.png')
-        #settings
+
         self.total_minutes = 1
         self.short_break_minute = 5
         self.long_break_minutes = 15
         self.elapsed_seconds =  0 
-        self.focus_time_current_session = 0
-        self.focus_time_total = 0
+        self.currentSessionFocusTime = 0
+        self.totalFocusTime = 0
         self.break_status = False
         self.total_long_break_interval = 4
         self.current_long_break_interval = 0
@@ -33,8 +33,8 @@ class Pomodoro(QWidget):
         self.total_rounds = 4
         self.current_rounds = 0
         
-        self.session_id = None
-        self.task_id = None
+        self.sessionId = None
+        self.taskId = None
 
         self.display_timer = QTimer()
         self.display_timer.setInterval(1000)
@@ -55,14 +55,13 @@ class Pomodoro(QWidget):
         self.quote = 'Focus'
         self.status = 'focus'
         
-        # Make and add the widgets
         self.container_widget = QWidget()
         self.container_widget_layout = QVBoxLayout()
         self.container_widget.setLayout(self.container_widget_layout)
 
-        self.header_widget = QWidget()
-        self.header_widget_layout = QHBoxLayout()
-        self.header_widget.setLayout(self.header_widget_layout)
+        self.headerWidget = QWidget()
+        self.headerWidgetLayout = QHBoxLayout()
+        self.headerWidget.setLayout(self.headerWidgetLayout)
 
         self.add_task_button = QPushButton()
         self.add_task_button.setIcon(QIcon('./data/icons/plus.png'))
@@ -80,14 +79,14 @@ class Pomodoro(QWidget):
                                         }}
                                         """)  
         
-        self.task_label = Custom_QLabel(self.create_task_label_menu())
-        self.task_label.setMaximumWidth(0)
+        self.taskNameLabel = Custom_QLabel(self.createTaskMenu())
+        self.taskNameLabel.setMaximumWidth(0)
         
-        self.header_widget_layout.addStretch()
-        self.header_widget_layout.addWidget(self.get_task_name, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.header_widget_layout.addWidget(self.add_task_button, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.header_widget_layout.addStretch()
-        self.header_widget_layout.addWidget(self.task_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.headerWidgetLayout.addStretch()
+        self.headerWidgetLayout.addWidget(self.get_task_name, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.headerWidgetLayout.addWidget(self.add_task_button, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.headerWidgetLayout.addWidget(self.taskNameLabel, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.headerWidgetLayout.addStretch()
 
         self.body_widget = QWidget()
         self.body_widget_layout = QVBoxLayout()
@@ -110,21 +109,21 @@ class Pomodoro(QWidget):
 
         self.footer_widget_layout.addWidget(self.start_pause_button)
 
-        self.container_widget_layout.addWidget(self.header_widget, alignment=Qt.AlignmentFlag.AlignTop)
+        self.container_widget_layout.addWidget(self.headerWidget, alignment=Qt.AlignmentFlag.AlignTop)
         self.container_widget_layout.addWidget(self.body_widget)
         self.container_widget_layout.addWidget(self.footer_widget, alignment=Qt.AlignmentFlag.AlignJustify)
 
         self.set_button_style_sheet(self.add_task_button)
         self.set_button_style_sheet(self.start_pause_button)
 
-        self.add_task_button.pressed.connect(self.on_add_task_button_clicked)
+        self.add_task_button.pressed.connect(self.onAddTaskButtonClicked)
         self.start_pause_button.pressed.connect(self.start_pause_pomodoro)
 
         self.main_layout = QVBoxLayout()
         self.main_layout.addWidget(self.container_widget)
         self.setLayout(self.main_layout)
         
-    def create_task_label_menu(self):
+    def createTaskMenu(self):
         self.task_menu = QToolButton()
         self.task_menu.setIcon(QIcon('./data/icons/menu.png'))
         self.task_menu.setIconSize(QSize(50, 50))
@@ -133,7 +132,7 @@ class Pomodoro(QWidget):
         menu = QMenu(self.parent)
         
         edit = QAction('Edit', self.parent)
-        edit.triggered.connect(self.edit_task_label)
+        edit.triggered.connect(self.editTaskName)
         remove = QAction('Remove', self.parent)
         remove.triggered.connect(self.remove_task_label)
         
@@ -144,56 +143,54 @@ class Pomodoro(QWidget):
         
         return self.task_menu
         
-    def edit_task_label(self):
+    def editTaskName(self):
         self.get_task_name.clear()
-        self.get_task_name.setText(self.task_label.text())
+        self.get_task_name.setText(self.taskNameLabel.text())
         
         self.animate_set_task(animate_open=False)
         self.animate_get_task(animate_open=True)
         self.get_task_name.editing = True
     
-    def commit_edit_task(self):
+    def updateTaskName(self):
         task_name = self.get_task_name.text()
-        set_new_task_name(self.task_id, task_name)
-        self.task_label.setText(task_name)
+        updateTaskName(self.taskId, task_name)
+        self.taskNameLabel.setText(task_name)
         self.animate_get_task(animate_open=False)
         self.animate_set_task(animate_open=True)
     
     def remove_task_label(self):
         pass
             
-    def on_add_task_button_clicked(self):
+    def onAddTaskButtonClicked(self):
         self.animate_add_task_button(animate_open=False, animate_open_get_task=True)
     
-    def set_task(self):
+    def setTask(self):
         text = self.get_task_name.text()
-        date_created = datetime.now()
-        date_created = date_created.strftime('%Y-%m-%d')
-        self.task_label.setText(text)
-        self.add_task_time = self.focus_time_current_session
-        self.task_id = commit_new_task_data(text, date_created, 'none', 'not done', None)
-        self.pomodoro_id = get_pomodoro_id(self.task_id)
-        self.session_id = new_session_data(self.pomodoro_id)
-        self.focus_time_total = 0
+        dateCreated = datetime.now()
+        dateCreated = dateCreated.strftime('%Y-%m-%d')
+        self.taskNameLabel.setText(text)
+        self.taskId = commit_new_task_data(text, dateCreated, 'none', 'not done', None)
+        self.pomodoroId = fetchPomodoroId(self.taskId)
+        self.sessionId = insertNewSessionData(self.pomodoroId)
+        self.totalFocusTime = 0
         
         self.animate_add_task_button(animate_open=False, animate_open_get_task=False)
         self.animate_set_task(animate_open=True)
         
-    def get_task(self, text, task_id):
-        self.task_label.setText(text)
-        self.add_task_time = self.focus_time_current_session
-        self.task_id = task_id
-        self.pomodoro_id = get_pomodoro_id(self.task_id)
-        self.session_id = new_session_data(self.pomodoro_id)
-        self.focus_time_total = get_total_time(self.pomodoro_id)
-        self.parent.stacked_display_layout.setCurrentWidget(self.parent.pomodoro_widget) 
+    def getTask(self, text, taskId):
+        self.taskNameLabel.setText(text)
+        self.taskId = taskId
+        self.pomodoroId = fetchPomodoroId(self.taskId)
+        self.sessionId = insertNewSessionData(self.pomodoroId)
+        self.totalFocusTime = fetchTaskTotalFocusTime(self.pomodoroId)
+        self.parent.stackedContainerLayout.setCurrentWidget(self.parent.pomodoroWidget) 
         
         self.animate_add_task_button(animate_open=False, animate_open_get_task=False)
         self.animate_set_task(animate_open=True)
         
     def animate_set_task(self, animate_open=True):
-        self.set_task_animation = QPropertyAnimation(self.task_label, b"maximumWidth")
-        self.set_task_animation.setStartValue(self.task_label.width())
+        self.set_task_animation = QPropertyAnimation(self.taskNameLabel, b"maximumWidth")
+        self.set_task_animation.setStartValue(self.taskNameLabel.width())
         if animate_open == True:
             self.set_task_animation.setEndValue(600)
         else:
@@ -239,24 +236,24 @@ class Pomodoro(QWidget):
             self.display_time_total = self.long_break_seconds
             self.quote = 'Long Break'
             self.status = 'long break'
-            self.clock_widget.get_change_color(task_color, long_break_color)
+            self.clock_widget.get_change_color(taskColor, longBreakColor)
             self.current_long_break_interval = 0
         else: 
             self.short_break_timer.start()
             self.display_time_total = self.short_break_seconds
             self.quote = 'Short Break'
             self.status = 'short break'
-            self.clock_widget.get_change_color(task_color, short_break_color)
+            self.clock_widget.get_change_color(taskColor, shortBreakColor)
         self.break_status = True
         self.display_time = 0
     
     def break_over(self):
         if self.long_break_timer.isActive():
             self.long_break_timer.stop()
-            self.clock_widget.get_change_color(long_break_color, task_color)
+            self.clock_widget.get_change_color(longBreakColor, taskColor)
         if self.short_break_timer.isActive():
             self.long_break_timer.stop()
-            self.clock_widget.get_change_color(short_break_color, task_color)
+            self.clock_widget.get_change_color(shortBreakColor, taskColor)
         self.timer.start()
         self.current_rounds += 1
         self.current_long_break_interval += 1
@@ -290,13 +287,13 @@ class Pomodoro(QWidget):
         self.elapsed_seconds += 1
         self.display_time += 1
         if self.break_status == False:
-            self.focus_time_current_session += 1
-            self.focus_time_total += 1
-            if self.task_label.text():
-                update_pomodoro_data(self.pomodoro_id, self.current_rounds, self.focus_time_total)
+            self.currentSessionFocusTime += 1
+            self.totalFocusTime += 1
+            if self.taskNameLabel.text():
+                update_pomodoro_data(self.pomodoroId, self.current_rounds, self.totalFocusTime)
         
-        if self.session_id:
-            update_session_data(self.session_id, self.elapsed_seconds, self.focus_time_current_session)
+        if self.sessionId:
+            updateSessionData(self.sessionId, self.elapsed_seconds, self.currentSessionFocusTime)
 
         total_time, time = self.get_formatted_time()
         self.clock_widget.set_value(self.display_time, self.display_time_total, time, total_time, self.total_rounds, self.current_rounds, self.quote)
@@ -441,9 +438,9 @@ class Custom_QLineEdit(QLineEdit):
         if event.key() == Qt.Key_Escape:
             self.parent.animate_add_task_button(animate_open=True, animate_open_get_task=False)
         if event.key() == Qt.Key_Return and self.editing == False:
-            self.parent.set_task()
+            self.parent.setTask()
         if event.key() == Qt.Key_Return and self.editing == True:
-            self.parent.commit_edit_task()
+            self.parent.updateTaskName()
             self.editing = False
 
         super().keyPressEvent(event)
@@ -461,7 +458,7 @@ class Custom_QLabel(QWidget):
         
         self.setStyleSheet(f"""QLabel {{
                         font-size: 30px;
-                        font-weight: 50;              
+                        font-weight: 50; 
                         }}
                         QToolButton {{
                             border: none

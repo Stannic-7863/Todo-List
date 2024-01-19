@@ -51,7 +51,7 @@ class Custom_Scroll_Bar(QScrollBar):
         super().__init__()
         self.setStyleSheet(f"""
                             QScrollBar:vertical {{
-                            background: {background};
+                            background: {backgroundColor};
                             width: 20px;
                             border: 0px solid black;
                             margin: 15px 10px 15px 0px
@@ -60,32 +60,32 @@ class Custom_Scroll_Bar(QScrollBar):
                             QScrollBar::handle:vertical {{
                             border: 0px solid black;
                             border-radius : 5px;
-                            background-color : {primary}; 
+                            background-color : {primaryColor}; 
                             }}
 
                             QScrollBar::sub-line:vertical {{
-                            background: {background};
+                            background: {backgroundColor};
                             }}
                             
                             QScrollBar::add-line:vertical {{
-                            background: {background}; 
+                            background: {backgroundColor}; 
                             }}
 
                             QScrollBar::sub-page:vertical {{
-                            background: {background};
+                            background: {backgroundColor};
                             }}
 
                             QScrollBar::add-page:vertical {{
-                            background: {background};
+                            background: {backgroundColor};
                             }}
                         """)
         
 
     def enterEvent(self, event):
-        start_animation(self, qprimary, priority_mid)
+        start_animation(self, primaryColor, priorityMidColor)
 
     def leaveEvent(self, event):
-        start_animation(self, priority_mid, qprimary)
+        start_animation(self, priorityMidColor, primaryColor)
 
 class GetTaskFromUser(QWidget):
     def __init__(self, parent, mainwindowlayout):
@@ -106,17 +106,17 @@ class GetTaskFromUser(QWidget):
         self.get_task_text_widget_layout = QVBoxLayout()
         self.get_task_text_widget = QWidget()
         self.get_task_text_widget.setLayout(self.get_task_text_widget_layout)
-        self.get_task_text = QPlainTextEdit()
-        self.get_task_text_widget_layout.addWidget(self.get_task_text)
-        self.get_task_text.setStyleSheet("max-height: 70")
-        self.get_task_text.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.get_task_text.textChanged.connect(self.word_limit)
-        self.get_task_text.setPlaceholderText('Enter Task Name and description')
+        self.getTaskName = QPlainTextEdit()
+        self.get_task_text_widget_layout.addWidget(self.getTaskName)
+        self.getTaskName.setStyleSheet("max-height: 70")
+        self.getTaskName.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.getTaskName.textChanged.connect(self.word_limit)
+        self.getTaskName.setPlaceholderText('Enter Task Name and description')
 
-        self.current_word_count_label = QLabel()
-        self.current_word_count_label.setText(f'{len(self.get_task_text.toPlainText())}/{self.limit}')
-        self.current_word_count_label.setStyleSheet(f"""QLabel {{
-                            color : {background};
+        self.currentWordCountLabel = QLabel()
+        self.currentWordCountLabel.setText(f'{len(self.getTaskName.toPlainText())}/{self.limit}')
+        self.currentWordCountLabel.setStyleSheet(f"""QLabel {{
+                            color : {backgroundColor};
                             font-weight: bold;}}
                         """)
 
@@ -133,9 +133,9 @@ class GetTaskFromUser(QWidget):
         priority_button_group.addButton(self.p_mid)
         priority_button_group.addButton(self.p_low)
 
-        self.set_radio_style_sheet(self.p_high, priority_high)
-        self.set_radio_style_sheet(self.p_mid, priority_mid)
-        self.set_radio_style_sheet(self.p_low, priority_low)
+        self.set_radio_style_sheet(self.p_high, priorityHighColor)
+        self.set_radio_style_sheet(self.p_mid, priorityMidColor)
+        self.set_radio_style_sheet(self.p_low, priorityLowColor)
         
         self.save_button = QPushButton('Save')
         cancel_shortcut = QShortcut(QKeySequence('escape'), self)
@@ -149,7 +149,7 @@ class GetTaskFromUser(QWidget):
         priority_button_container_layout.addWidget(self.p_mid, alignment=Qt.AlignmentFlag.AlignLeft)
         priority_button_container_layout.addWidget(self.p_low, alignment=Qt.AlignmentFlag.AlignLeft)
         priority_button_container_layout.addStretch()
-        priority_button_container_layout.addWidget(self.current_word_count_label, alignment=Qt.AlignmentFlag.AlignRight)
+        priority_button_container_layout.addWidget(self.currentWordCountLabel, alignment=Qt.AlignmentFlag.AlignRight)
         self.main_layout.addWidget(priority_button_container)   
         self.main_layout.addWidget(self.save_button, alignment=Qt.AlignmentFlag.AlignRight)
 
@@ -161,41 +161,45 @@ class GetTaskFromUser(QWidget):
         self.setStyleSheet(f"""
                         QWidget {{border-radius: 5px}}
                         QPlainTextEdit {{
-                        background: {background};
+                        background: {backgroundColor};
                         border-radius: 5px
                         }}
                         QPushButton {{
-                        background: {background};
+                        background: {backgroundColor};
                         border-radius: 5px;
                         }}
                         QRadioButton::indicator {{
                         image : none;
-                        }}""")
+                        }}
+                        QLabel {{
+                        color : {fontColor}
+                        }}
+                        """)
 
     def word_limit(self):
-        self.get_task_text.blockSignals(True)
-        current_text = self.get_task_text.toPlainText()
+        self.getTaskName.blockSignals(True)
+        current_text = self.getTaskName.toPlainText()
         if len(current_text) > self.limit:
-            cursor = self.get_task_text.cursor()
-            turnacated_text = current_text[:self.limit]
-            self.get_task_text.setPlainText(turnacated_text)
-            self.get_task_text.setCursor(cursor)
+            cursor = self.getTaskName.cursor()
+            turnacatedText = current_text[:self.limit]
+            self.getTaskName.setPlainText(turnacatedText)
+            self.getTaskName.setCursor(cursor)
             
-        display_text = len(current_text)
-        self.current_word_count_label.setStyleSheet(f"""QLabel {{
-                                                color : {background};
+        currentWordCount = len(current_text)
+        self.currentWordCountLabel.setStyleSheet(f"""QLabel {{
+                                                color : {backgroundColor};
                                                 font-weight: bold;
                                                 }}""")
-        if display_text >= 300:
-            display_text = 300   
-            self.current_word_count_label.setStyleSheet(f"""QLabel {{
-                                                    color : rgb{str(priority_mid)};
+        if currentWordCount >= 300:
+            currentWordCount = 300   
+            self.currentWordCountLabel.setStyleSheet(f"""QLabel {{
+                                                    color : rgb{str(priorityMidColor)};
                                                     font-weight: bold;
                                                     }}""")
 
-        self.current_word_count_label.setText(f'{display_text}/{self.limit}')
+        self.currentWordCountLabel.setText(f'{currentWordCount}/{self.limit}')
 
-        self.get_task_text.blockSignals(False)
+        self.getTaskName.blockSignals(False)
 
     def on_save(self):
         prio = 'none'
@@ -206,10 +210,10 @@ class GetTaskFromUser(QWidget):
         if self.p_low.isChecked():
             prio = 'low'
         
-        text = self.get_task_text.toPlainText().strip()
-        current_datetime = datetime.datetime.now()
-        formatted_date = current_datetime.strftime('%Y-%m-%d')
-        task_id = commit_new_task_data(text, str(formatted_date), prio, 'not done', None)
+        text = self.getTaskName.toPlainText().strip()
+        currentDatetime = datetime.datetime.now()
+        formattedDate = currentDatetime.strftime('%Y-%m-%d')
+        task_id = commit_new_task_data(text, str(formattedDate), prio, 'not done', None)
         Add_Task(self.parent, self.mainwindowlayout ,text, prio, 'not done', task_id)
 
         self.parent.on_task_added()
@@ -239,15 +243,15 @@ class GetTaskFromUser(QWidget):
 def start_animation(widget, color_from, color_to):
     animation = QVariantAnimation(widget)
     animation.setDuration(400)
-    animation.setStartValue(QColor(qRgb(color_from[0], color_from[1], color_from[2])))
-    animation.setEndValue(QColor(qRgb(color_to[0], color_to[1], color_to[2])))
+    animation.setStartValue(QColor(color_from))
+    animation.setEndValue(QColor(color_to))
     animation.valueChanged.connect(lambda value: change(widget, value.name()))
     animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
 
 def change(widget, color):
     widget.setStyleSheet(f"""
                         QScrollBar:vertical {{
-                        background: {background};
+                        background: {backgroundColor};
                         width: 20px;
                         border: 0px solid black;
                         margin: 15px 10px 15px 0px
@@ -260,19 +264,18 @@ def change(widget, color):
                         }}
 
                         QScrollBar::sub-line:vertical {{
-                        background: {background};
+                        background: {backgroundColor};
                         }}
                         
                         QScrollBar::add-line:vertical {{
-                        background: {background}; 
+                        background: {backgroundColor}; 
                         }}
 
                         QScrollBar::sub-page:vertical {{
-                        background: {background};
+                        background: {backgroundColor};
                         }}
 
                         QScrollBar::add-page:vertical {{
-                        background: {background};
+                        background: {backgroundColor};
                         }}
                     """)
-

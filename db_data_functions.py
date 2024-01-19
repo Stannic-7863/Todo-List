@@ -174,7 +174,7 @@ def update_pomodoro_data(pomodoro_id, current_round, total_time):
                 """)
     connection.commit()
     
-def get_total_time(pomodoro_id):
+def fetchTaskTotalFocusTime(pomodoro_id):
     cursor.execute(f"""
         SELECT total_time 
         FROM pomodoro 
@@ -183,14 +183,23 @@ def get_total_time(pomodoro_id):
     
     return(cursor.fetchone()[0])
 
-def set_new_task_name(task_id, name):
+def updateTaskName(task_id, name):
     cursor.execute("""UPDATE tasks
                     set task_name = ? 
                     WHERE task_id = ?
                 """, (name, task_id))
     connection.commit()
 
-def new_session_data(pomodoro_id):
+def getTaskName(taskId):
+    cursor.execute("""
+                SELECT task_name
+                FROM main
+                INNER JOIN tasks USING(task_id)
+                WHERE task_id = ?
+                """, (taskId, ))
+    return cursor.fetchone()[0]
+
+def insertNewSessionData(pomodoro_id):
     cursor.execute("""
         INSERT INTO session_data (pomodoro_id, session_start_time) VALUES (?, ?)
                 """, (pomodoro_id, datetime.now().strftime('%Y-%m-%d %H:%M')))
@@ -199,7 +208,7 @@ def new_session_data(pomodoro_id):
     return cursor.lastrowid
 
 
-def update_session_data(session_id, total_duration, focus_time):
+def updateSessionData(session_id, total_duration, focus_time):
     cursor.execute(f"""
         UPDATE session_data
         SET session_duration = ?,
@@ -209,7 +218,7 @@ def update_session_data(session_id, total_duration, focus_time):
                 """, (total_duration, focus_time, datetime.now().strftime('%Y-%m-%d %H:%M'), session_id))
     connection.commit()
     
-def get_pomodoro_id(task_id):
+def fetchPomodoroId(task_id):
     cursor.execute("""
         SELECT pomodoro_id 
         FROM main
@@ -231,7 +240,7 @@ def fetch_data():
     results = cursor.fetchall()
     return results
 
-def get_task_status_count():
+def fetchPiegraphData():
 
     cursor.execute("SELECT COUNT(*) FROM main WHERE status_id IN (SELECT status_id FROM status WHERE current_status = 'not done')")
     not_done = cursor.fetchone()[0]
@@ -239,9 +248,19 @@ def get_task_status_count():
     cursor.execute("SELECT COUNT(*) FROM main WHERE status_id IN (SELECT status_id FROM status WHERE current_status = 'done')")
     done = cursor.fetchone()[0]
 
-    return not_done, done
+    undone_task = {'name' : 'Not Completed', 
+                'value': not_done, 
+                'primary_color': piegraphPrimaryUndoneColor, 
+                'secondary_color': piegraphSecondaryUndoneColor}
+    
+    done_task = {'name' : 'Completed', 
+                'value': done, 
+                'primary_color': piegraphPrimaryDoneColor, 
+                'secondary_color': piegraphSecondaryDoneColor}
+    
+    return [undone_task, done_task]
 
-def get_priority_data_for_bar_chart(LIMIT=20):
+def fetchBarChartPriorityData(LIMIT=20):
     cursor.execute("""
     SELECT 
         strftime('%Y-%m-%d', last_marked_done) AS time,
@@ -275,10 +294,10 @@ def get_priority_data_for_bar_chart(LIMIT=20):
         none['values'].append(n)
         dates_done.append(date_done)
 
-    high['color'] = priority_high
-    mid['color'] = priority_mid
-    low['color'] = priority_low
-    none['color'] = priority_none
+    high['color'] = priorityHighColor
+    mid['color'] = priorityMidColor
+    low['color'] = priorityLowColor
+    none['color'] = priorityNoneColor
         
     data_lst.append(high)
     data_lst.append(mid)
