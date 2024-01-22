@@ -21,8 +21,8 @@ class Pomodoro(QWidget):
         self.currentSessionFocusTime = 0
         self.totalFocusTime = 0
         self.break_status = False
-        self.total_long_break_interval = 4
         self.current_long_break_interval = 0
+        self.total_long_break_interval = 4
         
         self.total_seconds = self.total_minutes * 60
         self.short_break_seconds = self.short_break_minute * 60
@@ -35,6 +35,7 @@ class Pomodoro(QWidget):
         
         self.sessionId = None
         self.taskId = None
+        self.isSessionActive = False
 
         self.display_timer = QTimer()
         self.display_timer.setInterval(1000)
@@ -134,7 +135,7 @@ class Pomodoro(QWidget):
         edit = QAction('Edit', self.parent)
         edit.triggered.connect(self.editTaskName)
         remove = QAction('Remove', self.parent)
-        remove.triggered.connect(self.remove_task_label)
+        remove.triggered.connect(self.endCurrentPomodoro)
         
         menu.addAction(edit)
         menu.addAction(remove)
@@ -158,9 +159,32 @@ class Pomodoro(QWidget):
         self.animate_get_task(animate_open=False)
         self.animate_set_task(animate_open=True)
     
-    def remove_task_label(self):
-        pass
-            
+    def endCurrentPomodoro(self):
+        self.elapsed_seconds =  0 
+        self.currentSessionFocusTime = 0
+        self.totalFocusTime = 0
+        self.break_status = False
+        self.current_long_break_interval = 0
+        
+        self.display_time = 0
+        self.display_time_total = self.total_seconds
+        self.total_rounds = 4
+        self.current_rounds = 0
+        
+        self.sessionId = None
+        self.taskId = None
+        self.isSessionActive = False
+        
+        if self.display_timer.isActive() == True:
+            self.start_pause_pomodoro()
+        
+        self.taskNameLabel.setText("")
+        
+        self.animate_add_task_button(True, False)
+        self.animate_get_task(False)
+        
+        self.clock_widget.repaint()
+        
     def onAddTaskButtonClicked(self):
         self.animate_add_task_button(animate_open=False, animate_open_get_task=True)
     
@@ -170,8 +194,6 @@ class Pomodoro(QWidget):
         dateCreated = dateCreated.strftime('%Y-%m-%d')
         self.taskNameLabel.setText(text)
         self.taskId = commit_new_task_data(text, dateCreated, 'none', 'not done', None)
-        self.pomodoroId = fetchPomodoroId(self.taskId)
-        self.sessionId = insertNewSessionData(self.pomodoroId)
         self.totalFocusTime = 0
         
         self.animate_add_task_button(animate_open=False, animate_open_get_task=False)
@@ -181,14 +203,12 @@ class Pomodoro(QWidget):
         self.taskNameLabel.setText(text)
         self.taskId = taskId
         self.pomodoroId = fetchPomodoroId(self.taskId)
-        self.sessionId = insertNewSessionData(self.pomodoroId)
-        self.totalFocusTime = fetchTaskTotalFocusTime(self.pomodoroId)
         self.parent.stackedContainerLayout.setCurrentWidget(self.parent.pomodoroWidget) 
         
         self.animate_add_task_button(animate_open=False, animate_open_get_task=False)
         self.animate_set_task(animate_open=True)
         
-    def animate_set_task(self, animate_open=True):
+    def animate_set_task(self, animate_open):
         self.set_task_animation = QPropertyAnimation(self.taskNameLabel, b"maximumWidth")
         self.set_task_animation.setStartValue(self.taskNameLabel.width())
         if animate_open == True:
@@ -267,6 +287,11 @@ class Pomodoro(QWidget):
         self.status = 'focus'
 
     def start_pause_pomodoro(self):
+        if self.isSessionActive == False: 
+            self.sessionId = insertNewSessionData(self.pomodoroId)
+            self.totalFocusTime = fetchTaskTotalFocusTime(self.pomodoroId)
+            self.isSessionActive = True
+        
         if self.display_timer.isActive() == False:
             self.start_pause_button.setIcon(self.pause_icon)
             self.display_timer.start()
@@ -289,7 +314,7 @@ class Pomodoro(QWidget):
         if self.break_status == False:
             self.currentSessionFocusTime += 1
             self.totalFocusTime += 1
-            if self.taskNameLabel.text():
+            if self.taskId:
                 update_pomodoro_data(self.pomodoroId, self.current_rounds, self.totalFocusTime)
         
         if self.sessionId:
