@@ -6,8 +6,6 @@ from PySide6 import QtCharts
 from db_data_functions import *
 from CustomWidgets import *
 from stat_widgets import *
-from TaskWidget import *
-from pomodoro import Pomodoro
 from MainWindowWidgets import *
 
 class MainWindow(QMainWindow):
