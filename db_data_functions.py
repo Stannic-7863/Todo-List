@@ -2,18 +2,10 @@ import sqlite3
 from settings import *
 from datetime import datetime, timedelta
 
-data_base_path = './data/task_data/task_database.db'
+data_base_path = 'data/task_data/task_database.db'
 connection = sqlite3.connect(data_base_path)
 cursor = connection.cursor()
 current_version = 102
-
-
-def get_version():
-    cursor.execute("PRAGMA user_version;")
-    return cursor.fetchone()[0]
-
-def update_version():
-    cursor.execute(f"PRAGMA user_version = {current_version};")
 
 def setupDatabase():
     cursor.execute(""" 
@@ -223,7 +215,7 @@ def fetchPomodoroId(task_id):
         SELECT pomodoro_id 
         FROM main
         INNER JOIN pomodoro USING(pomodoro_id)
-        WHERE pomodoro_id = ?
+        WHERE task_id = ?
                 """, (task_id,))
     
     return(cursor.fetchone()[0])
@@ -241,7 +233,6 @@ def fetch_data():
     return results
 
 def fetchPiegraphData():
-
     cursor.execute("SELECT COUNT(*) FROM main WHERE status_id IN (SELECT status_id FROM status WHERE current_status = 'not done')")
     not_done = cursor.fetchone()[0]
 
@@ -260,7 +251,7 @@ def fetchPiegraphData():
     
     return [undone_task, done_task]
 
-def fetchBarChartPriorityData(LIMIT=20):
+def fetchBarGraphPriorityData(LIMIT=20):
     cursor.execute("""
     SELECT 
         strftime('%Y-%m-%d', last_marked_done) AS time,
@@ -306,4 +297,15 @@ def fetchBarChartPriorityData(LIMIT=20):
 
     return data_lst, dates_done, all_dates, LIMIT
 
+def fetchPomodoroAllSessionDataForSingleTask(taskId):
+    pomodoroId = fetchPomodoroId(taskId)
+    
+    cursor.execute("""
+        SELECT session_start_time, session_end_time, focus_time, session_duration
+        FROM main
+        INNER JOIN session_data USING(pomodoro_id)
+        WHERE pomodoro_id = ?
+                """, (pomodoroId, ))
+    
+    return cursor.fetchall()
 
