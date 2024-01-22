@@ -1,16 +1,28 @@
-supportColor = "#FFFFFF"
-backgroundColor = "#222831"
-backgroundDarkColor = "#1B2027"
-primaryColor = "#393E46"
-secondaryColor = "#05D5FA"
-accentColor = "#FFA700"
-accentdarkColor = "#222831"
+from enum import Enum
 
-priorityLowColor = "#05D5FA"
-priorityMidColor = "#FFA700"
-priorityHighColor = "#ED4C4C"
-priorityNoneColor = "#393E46"
-taskDoneColor = "#0BDB7B"
+class PRIORITY(Enum):
+    HIGH = "High"
+    MID = "Mid"
+    LOW = "Low"
+    NONE = "None"
+
+class STATUS(Enum):
+    DONE = "Done"
+    NOT_DONE = "Not Done"
+
+supportColor = "#FFFFFF"
+backgroundColor = "#191724"
+backgroundDarkColor = "#11101a"
+primaryColor = "#40334d"
+secondaryColor = "#05D5FA"
+accentColor = "#26233a"
+accentdarkColor = "#26233a"
+
+priorityLowColor = "#22c3a8"
+priorityMidColor = "#eead2b"
+priorityHighColor = "#ec4b4b"
+priorityNoneColor = "#26233a"
+taskDoneColor = "#288a4f"
 
 taskColor = "#FFFFFF"
 shortBreakColor = "#0ADD08"
