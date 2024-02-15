@@ -2,7 +2,6 @@ from settings import *
 from PySide6.QtGui import *
 from PySide6.QtCore import *
 from PySide6.QtWidgets import *
-from PySide6 import QtCharts
 from db_data_functions import *
 from CustomWidgets import *
 from stat_widgets import *

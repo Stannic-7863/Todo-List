@@ -124,7 +124,7 @@ class PomodoroClock(QWidget):
 class TaskCheckBox(QCheckBox):    
     activeInstance = None
     
-    def __init__(self, parent: QMainWindow, taskName: str, priority: str, status: str, taskId: int, loadingData: bool) -> QCheckBox:
+    def __init__(self, parent: QMainWindow, taskName: str, priority: str, status: str, taskId: int, loadingData: bool) -> None:
         super().__init__()
         self.parent = parent
         self.layout = QHBoxLayout()

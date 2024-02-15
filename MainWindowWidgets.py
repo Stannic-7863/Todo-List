@@ -1,4 +1,3 @@
-from typing import Optional
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget
 from settings import *
@@ -305,6 +304,7 @@ class NavMenu(QWidget):
         
 # Still to be refactored 
 
+
 class Pomodoro(QWidget):
     def __init__(self, parent):
         super().__init__()
@@ -356,9 +356,14 @@ class Pomodoro(QWidget):
         self.quote = 'Focus'
         self.status = 'focus'
         
+     
+
+
         self.container_widget = QWidget()
         self.container_widget_layout = QVBoxLayout()
         self.container_widget.setLayout(self.container_widget_layout)
+        
+
 
         self.headerWidget = QWidget()
         self.headerWidgetLayout = QHBoxLayout()
@@ -733,6 +738,7 @@ class GetTaskFromUser(QWidget):
     def __init__(self, parent):
         super().__init__(parent)
         self.setMinimumWidth(200)
+        self.setMaximumHeight(200)
         self.parent = parent
         self.limit = 300
         
