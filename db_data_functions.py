@@ -2,7 +2,7 @@ import sqlite3
 from settings import *
 from datetime import datetime, timedelta
 
-data_base_path = 'data/task_data/task_database.db'
+data_base_path = 'data/task_database.db'
 connection = sqlite3.connect(data_base_path)
 cursor = connection.cursor()
 current_version = 102
@@ -308,4 +308,3 @@ def fetchPomodoroAllSessionDataForSingleTask(taskId):
                 """, (pomodoroId, ))
     
     return cursor.fetchall()
-
