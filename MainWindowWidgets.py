@@ -258,7 +258,8 @@ class NavMenu(QWidget):
         super().__init__()
         self.parent = parent
         self.isOpen = False
-        self.setMaximumWidth(0)
+        self.setMinimumWidth(70)
+        self.setMaximumWidth(70)
         
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
@@ -268,20 +269,12 @@ class NavMenu(QWidget):
         
     def createNavItems(self) -> None:
         """Creates all the required widgets"""
-        titleLabel = NavMenuItemLabels('YARIKATA', self, self.parent.homeWidget)
-        titleLabel.setStyleSheet("""font-size: 30px;""")
-        seperation_frame = QFrame()
-        seperation_frame.setFrameShape(QFrame.Shape.HLine)
-        seperation_frame.setStyleSheet(f"background: white")
-        seperation_frame.setFrameShadow(QFrame.Shadow.Sunken)
-        
-        self.layout.addWidget(titleLabel, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.layout.addWidget(seperation_frame)
-        
+
         homeTab = NavMenuItemLabels('Home', parent=self.parent, assigned=self.parent.homeWidget)
         doneTaskTab = NavMenuItemLabels('Task Done', parent=self.parent, assigned=self.parent.doneTaskView)
         pomodoroTab = NavMenuItemLabels('Pomodoro', parent=self.parent, assigned=self.parent.pomodoroWidget)
         
+        self.layout.addStretch()
         self.layout.addWidget(homeTab)
         self.layout.addWidget(doneTaskTab)
         self.layout.addWidget(pomodoroTab)
@@ -355,15 +348,11 @@ class Pomodoro(QWidget):
         
         self.quote = 'Focus'
         self.status = 'focus'
-        
-     
 
 
         self.container_widget = QWidget()
         self.container_widget_layout = QVBoxLayout()
         self.container_widget.setLayout(self.container_widget_layout)
-        
-
 
         self.headerWidget = QWidget()
         self.headerWidgetLayout = QHBoxLayout()
@@ -495,7 +484,7 @@ class Pomodoro(QWidget):
     
     def setTask(self):
         text = self.get_task_name.text()
-        dateCreated = datetime.now()
+        dateCreated = datetime.datetime.now()
         dateCreated = dateCreated.strftime('%Y-%m-%d')
         self.taskNameLabel.setText(text)
         self.taskId = commit_new_task_data(text, dateCreated, 'none', 'not done', None)
@@ -592,10 +581,11 @@ class Pomodoro(QWidget):
         self.status = 'focus'
 
     def start_pause_pomodoro(self):
-        if self.isSessionActive == False: 
-            self.sessionId = insertNewSessionData(self.pomodoroId)
-            self.totalFocusTime = fetchTaskTotalFocusTime(self.pomodoroId)
-            self.isSessionActive = True
+        if self.sessionId:
+            if self.isSessionActive == False: 
+                self.sessionId = insertNewSessionData(self.pomodoroId)
+                self.totalFocusTime = fetchTaskTotalFocusTime(self.pomodoroId)
+                self.isSessionActive = True
         
         if self.display_timer.isActive() == False:
             self.start_pause_button.setIcon(self.pause_icon)
@@ -833,7 +823,7 @@ class GetTaskFromUser(QWidget):
         currentDatetime = datetime.datetime.now()
         formattedDate = currentDatetime.strftime('%Y-%m-%d')
         task_id = commit_new_task_data(taskName, str(formattedDate), priority, 'not done', None)
-        TaskCheckBox(self.parent ,taskName, priority, 'not done', task_id, False)
+        TaskCheckBox(self.parent ,taskName, priority, 'not done', task_id)
 
         self.deleteLater()
 

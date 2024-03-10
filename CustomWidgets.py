@@ -124,14 +124,13 @@ class PomodoroClock(QWidget):
 class TaskCheckBox(QCheckBox):    
     activeInstance = None
     
-    def __init__(self, parent: QMainWindow, taskName: str, priority: str, status: str, taskId: int, loadingData: bool) -> None:
+    def __init__(self, parent: QMainWindow, taskName: str, priority: str, status: str, taskId: int) -> None:
         super().__init__()
         self.parent = parent
         self.layout = QHBoxLayout()
         self.status = status
         self.taskId = taskId
         self.taskName = taskName
-        self.loadingData = loadingData
         self.currentPriority = priority
         
         self.taskNameLabel = QLabel()
@@ -154,13 +153,7 @@ class TaskCheckBox(QCheckBox):
         self.layout.addWidget(self.buttonsWidget, alignment=Qt.AlignmentFlag.AlignRight)
         self.setLayout(self.layout)
         self.mouse_inside = False
-        
-        self.color = self.get_color(self.currentPriority)
-        self.stateChanged.connect(self.onStateChange)
-        changeColor(self, self.color)
 
-        self.updateMainStyleSheet(self.color)
-        
         if self.taskName:       
             if self.status == 'done':
                 self.setChecked(True)
@@ -169,6 +162,11 @@ class TaskCheckBox(QCheckBox):
                 self.setChecked(False) 
                 self.parent.taskView.addTask(self)
     
+        self.color = self.get_color(self.currentPriority)
+        self.stateChanged.connect(self.onStateChange)
+        self.updateMainStyleSheet(self.color)
+
+        self.updateMainStyleSheet(self.color)
         
     def checkOtherToggled(self) -> None:
         self.isInfoToggled = not self.isInfoToggled
@@ -230,16 +228,17 @@ class TaskCheckBox(QCheckBox):
         self.menu.addMenu(priority_menu)
         
     def changePrio(self, prio):
-        previous_prio = self.currentPriority
-        current_color = self.color
+        prevPriority = self.currentPriority
+        prevColor = self.color
+        
         self.currentPriority = prio
         self.color = self.get_color(prio)
+        
         if self.isChecked() == False:
-            colorChangeAnimation(self, current_color , self.color)
+            colorChangeAnimation(self, prevColor , self.color)
 
-        change_priority_db(previous_prio, self.currentPriority, self.taskId)
-        if not self.loadingData:    
-            self.updateGraphs()
+        change_priority_db(prevPriority, self.currentPriority, self.taskId)
+        self.updateGraphs()
 
     def onStateChange(self, value):
         state = Qt.CheckState(value)
@@ -248,29 +247,22 @@ class TaskCheckBox(QCheckBox):
         current_datetime = datetime.now()
         formatted_date = current_datetime.strftime('%Y-%m-%d')
         
-        self.updateHeight()
-        
         if state == Qt.CheckState.Unchecked:
             self.updateMainStyleSheet(self.color)
             self.status = 'not done'
             self.parent.taskView.addTask(self)
             self.parent.doneTaskView.removeTask(self)
-            
-            if not self.loadingData: 
-                change_status_db(prevStatus, self.status, self.taskId, formatted_date) 
+            change_status_db(prevStatus, self.status, self.taskId, formatted_date) 
         
         if state == Qt.CheckState.Checked:
             self.updateMainStyleSheet(taskDoneColor)
             self.status = 'done'
             self.parent.taskView.removeTask(self)
             self.parent.doneTaskView.addTask(self)
-            
-            if not self.loadingData:
-                change_status_db(prevStatus, self.status, self.taskId, formatted_date)
+            change_status_db(prevStatus, self.status, self.taskId, formatted_date)
     
-        self.parent.statsView.update() 
-
-        self.loadingData = False
+        self.updateHeight()
+        self.parent.statsView.update()
 
     def updateTaskName(self, newName) -> None:
         """Update the task Name and write changes to the database"""
@@ -347,8 +339,8 @@ class TaskCheckBox(QCheckBox):
                             background-color: {color};
                             color: white;
                             padding: 30px;
-                            border-radius: 5px;
-                            border : none
+                            border-radius: 1px;
+                            border : 3px black;
                             }}
                         QLabel {{
                             font-size : 18px
@@ -406,10 +398,7 @@ def colorChangeAnimation(widget, color_from, color_to):
     animation.setDuration(1000)
     animation.setStartValue(QColor(color_from))
     animation.setEndValue(QColor(color_to))
-    animation.valueChanged.connect(lambda value: changeColor(widget, value.name()))
+    animation.valueChanged.connect(lambda value: (widget.updateMainStyleSheet(value.name())))
     animation.start(QAbstractAnimation.DeletionPolicy.DeleteWhenStopped)
-
-def changeColor(widget, color):
-    widget.updateMainStyleSheet(color)
     
 

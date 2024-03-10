@@ -63,7 +63,7 @@ class MainWindow(QMainWindow):
         data = fetch_data()
         for items in data:
             taskName, priority, status, category, taskId = items
-            TaskCheckBox(self, taskName, priority, status, taskId, True)
+            TaskCheckBox(self, taskName, priority, status, taskId)
 
         self.showMaximized()
         self.setMainStyleSheet()    
